@@ -1,1 +1,1 @@
-{"name":"app","description":"test","scripts":{},"type":"module","dependencies":{}}
+{"name":"app","description":"test","scripts":{},"type":"module","dependencies":{"prompt-sync":"^4.2.0"}}

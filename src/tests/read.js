@@ -1,5 +1,5 @@
-import fs from "fs";
-import { OsuReader } from "./thing/reader.js";
+import fs, { read } from "fs";
+import { OsuReader } from "../thing/reader.js";
 
 /*  buffer parameter is optional, you can specify later on cmd.
     const osu_file = fs.readFileSync(path.resolve("osu_path", "osu!.db"));
@@ -15,7 +15,6 @@ if (!reader.osu && !reader.collections) {
 }
 
 const data = reader.type != "osu" ? reader.collections : reader.osu;
-console.log(data);
 
 // create data folder
 if (!fs.existsSync("./data")) {

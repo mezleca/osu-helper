@@ -102,9 +102,109 @@ export class OsuReader {
         });
     }
 
-    #TicksToTime(ticks) {
-       // TODO
+    #writeByte(value){
+        const buffer = Buffer.alloc(1);
+        buffer.writeUInt8(value, 0);
+        return buffer;
     }
+
+    #writeShort(value){
+        const buffer = Buffer.alloc(2);
+        buffer.writeUInt16LE(value, 0);
+        return buffer;
+    }
+
+    #writeInt(value){
+        console.log("int", value);
+        const buffer = Buffer.alloc(4);
+        buffer.writeUInt32LE(value, 0);
+        return buffer;
+    }
+
+    #writeLong(value){
+        console.log("long", value);
+        const buffer = Buffer.alloc(8);
+        buffer.writeBigInt64LE(BigInt(value), 0);
+        return buffer;
+    }
+
+    #writeSingle(value){
+        console.log("single", value);
+        const buffer = Buffer.alloc(4);
+        buffer.writeFloatLE(value, 0);
+        return buffer;
+    }
+
+    #writeDouble(value){
+        console.log("double", value);
+        const buffer = Buffer.alloc(8);
+        buffer.writeDoubleLE(value, 0);
+        return buffer;
+    }
+
+    #writeBool(value){
+        console.log("bool", value);
+        return this.#writeByte(value ? 0x01 : 0x00);
+    }
+
+    #writeString(value){
+        if (value === null) {
+            return this.#writeByte(0x00);
+        }
+        const lengthBuffer = this.#writeULEB128(value.length);
+        const stringBuffer = Buffer.from(value, 'utf-8');
+        return Buffer.concat([this.#writeByte(0x0B), lengthBuffer, stringBuffer]);
+    }
+
+    #writeULEB128(value) {
+        const buffer = Buffer.alloc(5); // max 5 bytes for 32-bit number
+        let offset = 0;
+        do {
+            let byte = value & 0x7F;
+            value >>>= 7;
+            if (value !== 0) { /* more bytes to come */
+                byte |= 0x80;
+            }
+            buffer.writeUInt8(byte, offset++);
+        } while (value !== 0);
+        return buffer.slice(0, offset); // remove unused bytes
+    }
+
+    write_collections_data = () => {
+        return new Promise(async (r, rj) => {
+
+            if (!this.collections) {
+                console.log("No collections found");
+                return;
+            }
+
+            console.log(this.collections);
+
+            // reset
+            this.offset = 0;
+            const buffer_array = [];
+            const data = this.collections;
+
+            buffer_array.push(this.#writeInt(data.version));
+            buffer_array.push(this.#writeInt(data.beatmaps.length)); 
+
+            for (let i = 0; i < data.length; i++) {
+                    
+                const collection = data.beatmaps[i];
+
+                buffer_array.push(this.#writeString(collection.name));
+                buffer_array.push(this.#writeInt(collection.maps.length));
+
+                for (let i = 0; i < collection.maps.length; i++) {
+                    buffer_array.push(this.#writeString(collection.maps[i]));
+                }
+            };
+
+            this.buffer = Buffer.concat(buffer_array);
+
+            r(this.buffer);
+        });
+    };
 
     get_osu_data = (limit) => {
 
@@ -280,12 +380,14 @@ export class OsuReader {
                 
                 const md5 = await this.#getMD5(bm_count);
 
-                if (beatmaps.length < limit) {
-                    beatmaps.push({
-                        name: name,
-                        maps: [...md5],
-                    });
-                }
+                beatmaps.push({
+                    name: name,
+                    maps: [...md5],
+                }); 
+            }
+
+            if (limit) {
+                beatmaps.slice(0, limit);
             }
 
             r({ version, length: count, beatmaps });
@@ -319,15 +421,15 @@ export class OsuReader {
             }
         }
 
-        const limit = prompt("Beatmap Limit: ");
+        const limit = Number(prompt("Beatmap Limit: ")) || null;
         
         if (this.type == "osu") { 
-            this.osu = await this.get_osu_data(Number(limit));
+            this.osu = await this.get_osu_data(limit);
             return;
         }
         
         if (this.type == "collection") {
-            this.collections = await this.get_collections_data(Number(limit));
+            this.collections = await this.get_collections_data(limit);
             return;
         }
 

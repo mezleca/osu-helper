@@ -1,20 +1,30 @@
-import fs, { read } from "fs";
+import fs from "fs";
+import path from "path";
 import { OsuReader } from "../reader/reader.js";
 
-/*  buffer parameter is optional, you can specify later on cmd.
+/*  buffer/type parameter is optional, you can specify later on cmd.
     const osu_file = fs.readFileSync(path.resolve("osu_path", "osu!.db"));
     const buffer = Buffer.from(osu_file) 
 */
 
-const reader = new OsuReader(/* buffer */);
-await reader.initialize();
+const reader = new OsuReader(/* buffer, type */);
 
-if (!reader.osu && !reader.collections) {
-    console.log("Something went wrong");
-    process.exit(1);
-}
+// initialize for reading osu!.db
+const osu_path = path.resolve("E:\\osu!");
+const osu_file = fs.readFileSync(path.resolve(osu_path, "osu!.db"));
+const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"));
 
-const data = reader.type != "osu" ? reader.collections : reader.osu;
+reader.set_type("osu");
+reader.set_directory("E:\\osu!");
+reader.set_buffer(osu_file);
+
+await reader.get_osu_data();
+
+// initialize for reading collection.db
+reader.set_type("collection");
+reader.set_buffer(collection_file);
+
+await reader.get_collections_data();
 
 // create data folder
 if (!fs.existsSync("./data")) {
@@ -22,14 +32,11 @@ if (!fs.existsSync("./data")) {
 }
 
 // delete unnecessary data
-data.beatmaps.map((a, i) => {
-    delete data.beatmaps[i].sr;
-    delete data.beatmaps[i].timing_points;
+reader.osu.beatmaps.map((a, i) => {
+    delete reader.osu.beatmaps[i].sr;
+    delete reader.osu.beatmaps[i].timing_points;
 });
 
-// write data to json file
-if (fs.existsSync("./data/info.json")) {
-    fs.writeFileSync("./data/info.json", JSON.stringify({ ...data, type: reader.type }, null, 2));
-} else {
-    fs.appendFileSync("./data/info.json", JSON.stringify({ ...data, type: reader.type }, null, 2));
-}
+// write to json
+fs.writeFileSync("./data/osu.json", JSON.stringify(reader.osu, null, 4));
+fs.writeFileSync("./data/collections.json", JSON.stringify(reader.collections, null, 4));

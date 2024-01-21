@@ -130,4 +130,5 @@ dist
 .pnp.*
 
 # .json data files for tests
+data/
 data/*.json

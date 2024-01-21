@@ -16,6 +16,18 @@ export class OsuReader {
         this.collections = [];
     }
 
+    set_buffer = (buffer) => {
+        this.buffer = Buffer.from(buffer);
+    }
+
+    set_type = (type) => {
+        this.type = type;
+    }
+
+    set_directory = (directory) => {
+        this.directory = path.resolve(directory);
+    }
+
     #readByte(){
         const value = this.buffer.readUint8(this.offset);
         this.offset += 1;
@@ -363,11 +375,15 @@ export class OsuReader {
                     break;
             }
 
-            r({ version, folders, account_unlocked, player_name, beatmaps_count, beatmaps, permissions_id, permission });
+            this.offset = 0;
+            this.osu = { version, folders, account_unlocked, player_name, beatmaps_count, beatmaps, permissions_id, permission };
+
+            r(this.osu);
         });
     };
 
     get_collections_data = (limit) => {
+
         return new Promise(async (r, rj) => {
 
             const beatmaps = [];
@@ -392,7 +408,10 @@ export class OsuReader {
                 beatmaps.slice(0, limit);
             }
 
-            r({ version, length: count, beatmaps });
+            this.offset = 0;
+            this.collections = { version, length: count, beatmaps };
+
+            r(this.collections);
         });
     };
 

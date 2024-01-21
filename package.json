@@ -1,1 +1,1 @@
-{"name":"app","description":"test","scripts":{},"type":"module","dependencies":{"osu-api-extended":"^2.7.67","prompt-sync":"^4.2.0"}}
+{"name":"app","description":"test","scripts":{},"type":"module","dependencies":{"axios":"^1.6.5","dotenv":"^16.3.2","osu-api-extended":"^2.7.67","prompt-sync":"^4.2.0"}}

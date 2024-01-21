@@ -132,3 +132,6 @@ dist
 # .json data files for tests
 data/
 data/*.json
+
+# package-lock.json
+package-lock.json

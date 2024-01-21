@@ -107,9 +107,7 @@ const download_maps = async () => {
 const base_url = "https://api.chimu.moe/v1/download/";
 let count = 0;
 
-console.log(`found ${missing_maps.length} missing maps\n${invalid.length} invalid maps.`);
-
-console.log(missing_maps.slice(0, 10));
+console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are invalid maps.`);
 
 const question = prompt("download missing maps? (y/n): ");
 

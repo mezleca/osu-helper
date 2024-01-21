@@ -185,7 +185,7 @@ export class OsuReader {
     write_collections_data = () => {
         return new Promise(async (r, rj) => {
 
-            if (!this.collections) {
+            if (!this.collections || this.type != "collection") {
                 console.log("No collections found");
                 return;
             }
@@ -208,7 +208,8 @@ export class OsuReader {
                 buffer_array.push(this.#writeInt(collection.maps.length));
 
                 for (let i = 0; i < collection.maps.length; i++) {
-                    buffer_array.push(this.#writeString(collection.maps[i]));
+                    const data = this.#writeString(collection.maps[i]);
+                    buffer_array.push(data);
                 }
             };
 

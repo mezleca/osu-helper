@@ -6,13 +6,16 @@ import { OsuReader } from "./thing/reader.js";
     const buffer = Buffer.from(osu_file) 
 */
 
-const Reader = new OsuReader(/* buffer */);
-const data = await Reader.export_data();
+const reader = new OsuReader(/* buffer */);
+await reader.initialize();
 
-if (!data) {
+if (!reader.osu && !reader.collections) {
     console.log("Something went wrong");
     process.exit(1);
 }
+
+const data = reader.type != "osu" ? reader.collections : reader.osu;
+console.log(data);
 
 // create data folder
 if (!fs.existsSync("./data")) {
@@ -21,7 +24,7 @@ if (!fs.existsSync("./data")) {
 
 // write data to json file
 if (fs.existsSync("./data/info.json")) {
-    fs.writeFileSync("./data/info.json", JSON.stringify({ ...data, type: Reader.type }, null, 2));
+    fs.writeFileSync("./data/info.json", JSON.stringify({ ...data, type: reader.type }, null, 2));
 } else {
-    fs.appendFileSync("./data/info.json", JSON.stringify({ ...data, type: Reader.type }, null, 2));
+    fs.appendFileSync("./data/info.json", JSON.stringify({ ...data, type: reader.type }, null, 2));
 }

@@ -1,5 +1,5 @@
 import fs, { read } from "fs";
-import { OsuReader } from "../thing/reader.js";
+import { OsuReader } from "../reader/reader.js";
 
 /*  buffer parameter is optional, you can specify later on cmd.
     const osu_file = fs.readFileSync(path.resolve("osu_path", "osu!.db"));

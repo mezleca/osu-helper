@@ -1,1 +1,1 @@
-{"name":"app","description":"test","scripts":{},"type":"module","dependencies":{"prompt-sync":"^4.2.0"}}
+{"name":"app","description":"test","scripts":{},"type":"module","dependencies":{"osu-api-extended":"^2.7.67","prompt-sync":"^4.2.0"}}

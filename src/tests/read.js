@@ -1,5 +1,5 @@
 import fs, { read } from "fs";
-import { OsuReader } from "../thing/reader.js";
+import { OsuReader } from "../reader/reader.js";
 
 /*  buffer parameter is optional, you can specify later on cmd.
     const osu_file = fs.readFileSync(path.resolve("osu_path", "osu!.db"));
@@ -20,6 +20,12 @@ const data = reader.type != "osu" ? reader.collections : reader.osu;
 if (!fs.existsSync("./data")) {
     fs.mkdirSync("./data");
 }
+
+// delete unnecessary data
+data.beatmaps.map((a, i) => {
+    delete data.beatmaps[i].sr;
+    delete data.beatmaps[i].timing_points;
+});
 
 // write data to json file
 if (fs.existsSync("./data/info.json")) {

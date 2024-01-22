@@ -61,16 +61,19 @@ reader.set_buffer(collection_file);
 
 await reader.get_collections_data();
 
-let missing_maps = [], invalid = [];
-const hashes = new Set(reader.osu.beatmaps.map(b => b.hash));
+let missing_maps = [], invalid = [], current_collection = 0;
 
+const hashes = new Set(reader.osu.beatmaps.map(b => b.hash));
 const Maps = reader.collections.beatmaps.map((b) => { return { name: b.name, maps: b.maps } });
 
 for (const map of Maps) {
+
+    missing_maps.push({ name: map.name });
+
     for (const m of map.maps) {
         if (!hashes.has(m)) {
             if (m != "4294967295") {
-                missing_maps.push({ hash: m });
+                missing_maps.push({ collecton_name: map.name, hash: m });
             }
             else {
                 invalid.push({ hash: m });
@@ -102,7 +105,7 @@ const download_map = async (b) => {
 
     } catch (error) {
         if (error.response) {
-            console.error("api error:", error.response.status, error.response.statusText);
+            console.error("api error:", error.response.status, b);
         }
         else {
             console.log("yep that was an error...");
@@ -141,21 +144,28 @@ if (question != "y") {
     process.exit(0);
 }
 
+if (prompt("download from a specific collection? (y/n): ") == "y") {
 
-// TODO
-// if (prompt("download from a specific collection? (y/n): ") == "y") {
+    const collections = [...new Set(missing_maps.map(a => a.collecton_name))];
 
-//     const name = prompt("collection name: ");
-//     missing_maps = missing_maps[name];
+    // print all collections name
+    console.log("collections:", collections.join("\n"));
 
-//     if (!missing_maps) {
-//         console.log("collection not found.");
-//         process.exit(0);
-//     }
-// } 
+    const name = prompt("collection name: ");
+    missing_maps = missing_maps.filter((a) => { return a.collecton_name == name })
+
+    if (!missing_maps) {
+        console.log("collection not found.");
+        process.exit(0);
+    }
+    
+    console.log("Found:", missing_maps.length, "maps");
+}
 
 download_maps().then(() => {
     console.log("done");
+    process.exit(0);
 }).catch((err) => {
-    console.log("something went wrong... probably with the api to download maps idk.", err)
+    console.log("something went wrong... probably with the api to download maps idk.", err);
+    process.exit(0);
 });

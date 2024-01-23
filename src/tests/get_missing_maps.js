@@ -5,7 +5,7 @@ import axios from "axios";
 import PromptSync from "prompt-sync";
 
 import { OsuReader } from "../reader/reader.js";
-import { auth, v2, v1 } from 'osu-api-extended';
+import { auth, v2, v1, tools } from 'osu-api-extended';
 
 /* 
 * This script will download all missing maps from your collection.db
@@ -45,7 +45,7 @@ const search_map_id = async (hash) => {
     })
 
     const data = await response.data;
-    return data.beatmapset_id;
+    return data.id;
 };
 
 await reader.get_osu_data();
@@ -87,22 +87,7 @@ const download_map = async (b) => {
     console.log("downloading map:", count + 1);
 
     try {
-        const response = await axios.get(`${base_url}${b}`, {
-            responseType: "stream",
-            method: "GET",
-        });
-
-        const stream = fs.createWriteStream(path.resolve("./data/", `${b}.osz`));
-        response.data.pipe(stream);
-
-        await new Promise((resolve, reject) => {
-            stream.on("finish", resolve);
-            stream.on("error", (err) => {
-                console.error("error:", b, err);
-                reject(err);
-            });
-        });
-
+        await tools.download.difficulty(b, path.resolve("data"), b, true);
     } catch (error) {
         if (error.response) {
             console.error("api error:", error.response.status, b);
@@ -130,10 +115,9 @@ const download_maps = async () => {
         }    
     }
 
-    console.log(`done\nfailed to download ${invalid.length}. reason: outdated/invalid map.}`);
+    console.log(`done\nfailed to download ${invalid.length} maps.\nreason: outdated/invalid map.}`);
 };
 
-const base_url = "https://api.chimu.moe/v1/download/";
 let count = 0;
 
 console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`);

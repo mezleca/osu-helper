@@ -183,6 +183,7 @@ export class OsuReader {
     }
 
     write_collections_data = () => {
+        
         return new Promise(async (r, rj) => {
 
             if (!this.collections || this.type != "collection") {

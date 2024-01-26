@@ -54,7 +54,7 @@ export const download_initialize = async () => {
             return;
         }
 
-        const stream = fs.createWriteStream(path.resolve("./data/", `${Date.now()}.osz`));
+        const stream = fs.createWriteStream(path.resolve("./data/", `${b}.osz`));
         response.data.pipe(stream);
 
         await new Promise((resolve, reject) => {

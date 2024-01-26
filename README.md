@@ -11,4 +11,4 @@ basically a bunch of scripts i made for myself to use.
 # todo
 - [ ] implement the read/write scripts.
 - [ ] fix bugs/crashes.
-- [ ] add more functions.
+- [ ] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc.)

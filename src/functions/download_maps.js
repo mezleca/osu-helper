@@ -25,7 +25,7 @@ export const download_initialize = async () => {
         file_path = path.resolve(file_path, maybe_a_valid_one);
     }
 
-    // verify is the file exists
+    // verify if the file exists
     if (!fs.existsSync(path.resolve(file_path))) {
         console.log("file not found");
         return;

@@ -1,12 +1,14 @@
-# hi
+# thing
 
-This repository contains some js scripts that may be useful to osu! players.
+script for downloading missing maps, exporting, etc.
+basically a bunch of scripts i made for myself to use.
 
-# scripts
+# functions
+- download missing maps.
+- export missing maps to a json file.
+- download missing maps from a json.
 
-### read
-- read both osu.db and collections.db files and export them to a .json
-### write
-- use this if you want a new .collection file with some different collection name? idk lol
-### get_missing_maps  
-- get and download all missing maps from your collections.
+# todo
+- [ ] implement the read/write scripts.
+- [ ] fix bugs/crashes.
+- [ ] add more functions.

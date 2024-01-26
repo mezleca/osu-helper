@@ -1,6 +1,6 @@
 # thing
 
-script for downloading missing maps, exporting, etc.
+script for downloading missing maps from collections, exporting, etc.
 basically a bunch of scripts i made for myself to use.
 
 # functions

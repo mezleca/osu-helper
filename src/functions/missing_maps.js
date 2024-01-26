@@ -108,7 +108,7 @@ const download_maps = async () => {
         }    
     }
 
-    console.log(`done\nfailed to download ${invalid.length} maps.\nreason: outdated/invalid map.}`);
+    console.log(`\ndone\nfailed to download ${invalid.length} maps.\nreason: outdated/invalid map.\n`);
 };
 
 const download_things = async () => {
@@ -121,8 +121,8 @@ const download_things = async () => {
         console.log("collections:", collections.join("\n"));
 
         const name = prompt("collection name: ");
-        missing_maps = missing_maps.filter((a) => { return a.collecton_name == name })
 
+        missing_maps = missing_maps.filter((a) => { return a.collecton_name == name })
         if (!missing_maps) {
             console.log("collection not found.");
             return;
@@ -158,7 +158,7 @@ const export_shit = async () => {
 
     const ids = [];
 
-    await new Promise(async (re, rej) => {
+    await new Promise(async (re) => {
 
         for (let i = 0; i < missing_maps.length; i++) {
 
@@ -181,6 +181,7 @@ const export_shit = async () => {
         re();
     });
 
+    // remove duplicate maps.
     const o = [...new Set(ids)];
 
     fs.writeFileSync("./data/beatmaps.json", JSON.stringify(o, null , 4));
@@ -232,7 +233,6 @@ export const missing_initialize = async () => {
     }
 
     console.clear();
-
     console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`);
 
     for (let i = 0; i < options.length; i++) [
@@ -240,7 +240,6 @@ export const missing_initialize = async () => {
     ]
 
     const option = prompt("select a option: ");
-
     if (option == "exit") {
         process.exit(0);
     }

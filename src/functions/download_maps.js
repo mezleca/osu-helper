@@ -34,6 +34,8 @@ export const download_initialize = async () => {
     const file = fs.readFileSync(path.resolve(file_path), "utf-8");
     const json = JSON.parse(file);
 
+    console.log("downloading", json.length, "maps...");
+
     for (let i = 0; i < json.length; i++) {
 
         const a = json[i].split("/");
@@ -63,4 +65,6 @@ export const download_initialize = async () => {
             });
         });
     }
+
+    console.log("\ndone!\n");
 };

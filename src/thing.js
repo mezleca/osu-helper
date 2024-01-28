@@ -4,9 +4,9 @@ import PromptSync from "prompt-sync";
 
 import { missing_initialize } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
+import { get_invalid_maps } from "./functions/collections.js";
 
 const prompt = PromptSync();
-
 const menu_options = [
     {
         name: "get missing beatmaps from collections",
@@ -15,6 +15,10 @@ const menu_options = [
     {
         name: "download maps from a json",
         func: download_initialize
+    },
+    {
+        name: "remove invalid maps from collections",
+        func: get_invalid_maps
     }
 ];
 
@@ -33,7 +37,9 @@ const main = async () => {
     
     while (true) {
 
-        console.log("osu-thing v0.1 ( type exit to... exit? )\n");
+        console.clear();
+
+        console.log("\nosu-thing v0.1 ( type exit to... exit? )\n");
         
         if (current_option == null) {
             current_option = select_option();

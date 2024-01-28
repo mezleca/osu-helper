@@ -30,7 +30,7 @@ const options = [
     }
 ];
 
-const search_map_id = async (hash) => {
+export const search_map_id = async (hash) => {
 
     try {
         const base = "https://osu.ppy.sh/api/v2/beatmaps/lookup?"
@@ -45,7 +45,6 @@ const search_map_id = async (hash) => {
         const data = await response.data;
         return data;
     } catch(err) {
-        console.log(err.response.status);
         return false;
     }
 };

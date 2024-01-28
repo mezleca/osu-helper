@@ -2,6 +2,8 @@ import PromptSync from "prompt-sync";
 import fs from "fs";
 import path from "path";
 
+import { osu_db, collections_db } from "./definitions.js";
+
 const prompt = PromptSync();
 
 export class OsuReader {
@@ -12,7 +14,9 @@ export class OsuReader {
     constructor(buffer, type) {
         type = type || "";
         buffer = buffer || null;
+        /** @type {osu_db} */
         this.osu = [];
+        /** @type {collections_db} */
         this.collections = [];
     }
 
@@ -127,35 +131,30 @@ export class OsuReader {
     }
 
     #writeInt(value){
-        console.log("int", value);
         const buffer = Buffer.alloc(4);
         buffer.writeUInt32LE(value, 0);
         return buffer;
     }
 
     #writeLong(value){
-        console.log("long", value);
         const buffer = Buffer.alloc(8);
         buffer.writeBigInt64LE(BigInt(value), 0);
         return buffer;
     }
 
     #writeSingle(value){
-        console.log("single", value);
         const buffer = Buffer.alloc(4);
         buffer.writeFloatLE(value, 0);
         return buffer;
     }
 
     #writeDouble(value){
-        console.log("double", value);
         const buffer = Buffer.alloc(8);
         buffer.writeDoubleLE(value, 0);
         return buffer;
     }
 
     #writeBool(value){
-        console.log("bool", value);
         return this.#writeByte(value ? 0x01 : 0x00);
     }
 
@@ -186,12 +185,10 @@ export class OsuReader {
         
         return new Promise(async (r, rj) => {
 
-            if (!this.collections || this.type != "collection") {
+            if (!this.collections) {
                 console.log("No collections found");
                 return;
             }
-
-            console.log(this.collections);
 
             // reset
             this.offset = 0;

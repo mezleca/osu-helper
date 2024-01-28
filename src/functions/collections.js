@@ -74,6 +74,7 @@ export const get_invalid_maps = async () => {
     const mappers = invalid_shit.length - valid.length;
     if (!mappers) {
         console.log("it seems there's no invalid maps in your collections :3");
+        return;
     }
 
     console.log(`${mappers} maps has been found...\n`);

@@ -36,10 +36,10 @@ const select_option = () => {
 let current_option = null;
 
 const main = async () => {
+
+    console.clear();
     
     while (true) {
-
-        console.clear();
 
         console.log("\nosu-thing v0.1 ( type exit to... exit? )\n");
         

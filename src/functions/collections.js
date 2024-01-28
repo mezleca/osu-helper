@@ -34,7 +34,7 @@ const get_osu = async () => {
 
 export const get_invalid_maps = async () => {
 
-    console.log("collecting maps and filtering invalid ones...");
+    console.log("\ncollecting maps and filtering invalid ones...\n");
     
     // initialize variables
     await get_collections();
@@ -59,7 +59,7 @@ export const get_invalid_maps = async () => {
 
     reader.osu = null;
 
-    console.log("checking invalid maps...");
+    console.log("checking invalid maps...\n");
 
     const valid = [];
 
@@ -73,7 +73,7 @@ export const get_invalid_maps = async () => {
 
     const mappers = invalid_shit.length - valid.length;
     if (!mappers) {
-        console.log("it seems there's no invalid maps in your collections :3");
+        console.log("it seems there's no invalid maps in your collections :3\n");
         return;
     }
 
@@ -93,5 +93,5 @@ export const get_invalid_maps = async () => {
 
     fs.writeFileSync("../data/collection.db", Buffer.from(buffer));
 
-    console.log("a new collection.db file has been generated. make sure to backup the old one before replacing in osu folder");
+    console.log("\na new collection.db file has been generated. make sure to backup the old one before replacing in osu folder\n");
 };

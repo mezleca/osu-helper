@@ -25,10 +25,10 @@ const menu_options = [
 const select_option = () => {
 
     for (let i = 0; i < menu_options.length; i++) {
-        console.log(`[${i}] - ${menu_options[i].name}\n`);
+        console.log(`[${i}] - ${menu_options[i].name}`);
     }
 
-    return prompt("select a option: ");
+    return prompt("\nselect a option: ");
 };
 
 let current_option = null;

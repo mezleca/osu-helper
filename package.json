@@ -2,7 +2,7 @@
     "name":"app",
     "description":"",
     "scripts":{
-       "start": "node things.js"
+       "start": "node src/things.js"
     },
     "type":"module",
     "dependencies":{

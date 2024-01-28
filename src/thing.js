@@ -28,7 +28,9 @@ const select_option = () => {
         console.log(`[${i}] - ${menu_options[i].name}`);
     }
 
-    return prompt("\nselect a option: ");
+    console.log("\n");
+
+    return prompt("select a option: ");
 };
 
 let current_option = null;

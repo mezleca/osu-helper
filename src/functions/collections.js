@@ -71,7 +71,12 @@ export const get_invalid_maps = async () => {
         }
     }
 
-    console.log(`${invalid_shit.length - valid.length} maps has been found...\n`);
+    const mappers = invalid_shit.length - valid.length;
+    if (!mappers) {
+        console.log("it seems there's no invalid maps in your collections :3");
+    }
+
+    console.log(`${mappers} maps has been found...\n`);
 
     if (prompt("do you want to remove them? (y/n) ") != "y") {
         console.log("ok");

@@ -26,9 +26,10 @@ html, body {
 .main {
     display: flex;
     flex-direction: column;
-    width: 25em;
+    width: 35em;
     height: auto;
     background-color: rgba(38, 38, 38, 0.251);
+    border: 1px solid rgba(255, 255, 255, 0.151);
     padding: 32px;
     border-radius: 6px;
 }
@@ -95,7 +96,7 @@ input[type=file]::before {
     left: 50;
     transform: translate(135%);
     content: 'select file';
-    color: black;
+    color: rgb(0, 0, 0);
     display: inline-block;
     background: -webkit-linear-gradient(top, #f9f9f9, #e3e3e3);
     border: 1px solid #999;
@@ -127,6 +128,7 @@ select {
     border-radius: 4px;
     max-width: 350px;
     align-self: center;
+    cursor: pointer;
 }
 
 .osu-popup {
@@ -176,8 +178,13 @@ select {
     font-family: "Helvetica Neue";
     color: rgb(255, 255, 255);
     padding: 10px;
-    background-color: #e3e3e355;
-    text-align: center;
+    background-color: #2e2e2e55;
+    border: 1px solid rgba(255, 255, 255, 0.194);
+}
+
+#go:hover {
+    border: 1px solid rgba(255, 255, 255, 0.531);
+    cursor: pointer;
 }
 
 @media (max-width: 744px) {
@@ -201,7 +208,6 @@ select {
 
     select {
         width: 40%;
-
     }
 
 }

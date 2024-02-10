@@ -7,6 +7,8 @@ const button = document.getElementById("go");
 const buffers = new Map();
 const can_run = [false, false];
 
+let doing = false, created_div = false;
+
 // i could use filter but fuck it 
 const remove_same_id_shit = (maps) => {
     const ids = [], no = [];
@@ -32,7 +34,7 @@ const remove_same_id_shit = (maps) => {
     return no;
 };
 
-const append_to_cu = (img_src, artist, title, mapper) => {
+const append_map = (img_src, artist, title, mapper) => {
 
   const new_div = document.createElement('div');
   new_div.className = 'osu-popup';
@@ -51,6 +53,22 @@ const append_to_cu = (img_src, artist, title, mapper) => {
 
   target_div.appendChild(new_div);
 }
+
+const create_container = () => {
+
+    const main_div = document.querySelector(".container");
+
+    const container = document.createElement("div");
+    const title = document.createElement("h1");
+
+    container.setAttribute("class", "maps_container");
+    container.setAttribute("id", "maps");
+
+    title.innerText = "maps";
+
+    container.appendChild(title);
+    main_div.appendChild(container);
+};
 
 osu_file.addEventListener("change", (e) => {
 
@@ -95,24 +113,29 @@ const get_data = async () => {
     await reader.get_osu_data();
 };
 
-let doing = false;
 button.addEventListener("click", async () => {
 
     if (!can_run[0] || !can_run[1] || doing) {
         return;
     }
 
+    if (!created_div) {
+        create_container();
+    }
+
     doing = true;
+    created_div = true;
+
+    let collections = [];
 
     const type = document.getElementById("type").value;
     const main = document.querySelector(".main");
-    let collections = [];
-
+    
     await get_data();
 
-    const beatmapHashes = new Map();
+    const hashes = new Map();
     for (const beatmap of reader.osu.beatmaps) {
-      beatmapHashes.set(beatmap.md5, { title: beatmap.song_title, artist: beatmap.artist_name, id: beatmap.beatmap_id, mapper: beatmap.creator_name });
+      hashes.set(beatmap.md5, { title: beatmap.song_title, artist: beatmap.artist_name, id: beatmap.beatmap_id, mapper: beatmap.creator_name });
     }
 
     if (type == "display") {
@@ -172,7 +195,7 @@ button.addEventListener("click", async () => {
               clearInterval(interval);
           }
 
-          const map = beatmapHashes.get(collections[0].maps[index]);
+          const map = hashes.get(collections[0].maps[index]);
           if (!map) {
               return;
           }
@@ -181,7 +204,7 @@ button.addEventListener("click", async () => {
           const artist = map.artist;
           const id = map.id;
 
-          append_to_cu(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, map.mapper);
+          append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, map.mapper);
           index++;
 
         }, 100);
@@ -194,7 +217,7 @@ button.addEventListener("click", async () => {
     let maps = [];
     for (const collection of reader.collections.beatmaps) {
       for (const hash of collection.maps) {
-        if (!beatmapHashes.has(hash)) {
+        if (!hashes.has(hash)) {
             maps.push(
               hash
             );
@@ -204,7 +227,7 @@ button.addEventListener("click", async () => {
 
     maps = remove_same_id_shit(maps);
     if (maps.length == 0) {
-        return append_to_cu("invalid", "0 maps found", "", "");
+        return append_map("invalid", "0 maps found", "", "");
     }
 
     console.log(maps);

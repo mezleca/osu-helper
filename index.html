@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="scrollbar.css">
+</head>
+<body>
+    <div class="container">
+        <div class="main">
+            <span>osu-reader</span>
+            <label for="aaa">osu file</label>
+            <input type="file" title=" " name="aaa" id="osu_file"/>
+            <label for="bbb">collection file</label>
+            <input type="file" title=" " name="bbb" id="collecion_file"/>
+            <label for="ccc">method</label>
+            <select name="ccc" id="type">
+                <option value="display" selected>display all maps</option>
+                <option value="missing" selected>get missing maps</option>
+            </select>
+            <button id="go">go</button>
+        </div>
+
+        <div class="cugay" id="maps">
+            <h1>maps</h1>
+            
+        </div>
+
+    </div>
+    <script type="module" src="./app.js"></script>
+</body>
+</html>

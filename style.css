@@ -9,6 +9,7 @@ html, body {
     height: 100vh;
     overflow: hidden;
     background-color: black;
+    margin: 0;
 }
 
 .container {
@@ -25,7 +26,7 @@ html, body {
 .main {
     display: flex;
     flex-direction: column;
-    width: 30%;
+    width: 25em;
     height: auto;
     background-color: rgba(38, 38, 38, 0.251);
     padding: 32px;
@@ -59,18 +60,19 @@ button {
     padding: 5px;
     font-size: 1.5em;
     width: 50%;
+    max-height: 30%;
     align-self: center;
     border-radius: 6px;
     outline: none;
     border: none;
 }
 
-.cugay {
+.maps_container {
     background-color: rgb(19, 19, 19);
     display: flex;
     flex-direction: column;
-    width: 60%;
-    height: 40%;
+    width: 40em;
+    max-height: 35%;
     overflow-y: scroll;
     overflow-x: hidden;
     border: 1px solid rgba(255, 255, 255, 0.151);
@@ -161,7 +163,7 @@ select {
     text-align: center;
 }
 
-.cugay h1 {
+.maps_container h1 {
     font-family: "Helvetica Neue";
     color: rgb(255, 255, 255);
     text-shadow: 1px 1px #000000;
@@ -176,4 +178,55 @@ select {
     padding: 10px;
     background-color: #e3e3e355;
     text-align: center;
+}
+
+@media (max-width: 744px) {
+
+    .container { 
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: space-evenly !important;
+    }
+
+    .maps_container {
+        width: 90% !important;
+        height: 100% !important;
+    }
+
+    .main {
+        width: 90% !important;
+        max-height: 25em;
+    }
+
+    select {
+        width: 40%;
+
+    }
+
+}
+
+@media (max-height: 850px) {
+
+    .container {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .main {
+        width: 40%;
+    }
+
+    select {
+        width: 65%;
+    }
+
+    button {
+        width: 80%;
+    }
+
+    .maps_container {
+        width: 50%;
+    }
+
 }

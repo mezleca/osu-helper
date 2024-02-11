@@ -11,16 +11,25 @@
     <div class="container">
         <div class="main">
             <span>osu-reader</span>
-            <label for="aaa">osu file</label>
-            <input type="file" title=" " name="aaa" id="osu_file"/>
-            <label for="bbb">collection file</label>
-            <input type="file" title=" " name="bbb" id="collecion_file"/>
+
+            <label for="aaa">
+                osu directory
+            </label>
+
+            <!-- im pretty sure this shit only work in some browsers but fuck it -->
+            <input type="file" title=" " name="aaa" id="directory"/ directory webkitdirectory>
+
             <label for="ccc">method</label>
             <select name="ccc" id="type">
                 <option value="display" selected>display all maps</option>
                 <option value="missing" selected>get missing maps</option>
             </select>
+
             <button id="go">go</button>
+
+            <div class="tooltip">( disclaimer )
+                <span class="tooltiptext">this shit get's all your directory files so make sure you dont have any big shit on the directory</span>
+            </div>
         </div>
     </div>
     <script type="module" src="./app.js"></script>

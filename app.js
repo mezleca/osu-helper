@@ -1,7 +1,6 @@
 import { OsuReader } from "./scripts/reader.js";
 
-const osu_file = document.getElementById("osu_file");
-const collecion_file = document.getElementById("collecion_file");
+const directory = document.getElementById("directory");
 const button = document.getElementById("go");
 
 const buffers = new Map();
@@ -70,33 +69,44 @@ const create_container = () => {
     main_div.appendChild(container);
 };
 
-osu_file.addEventListener("change", (e) => {
+directory.addEventListener("change", (e) => {
 
-    if (!buffers.has("osu")) {
-        const reader = new FileReader();
-        reader.onload = () => {
-            const array_buffer = reader.result;
-            buffers.set("osu", array_buffer);
-            can_run[0] = true;
-        };
-        reader.readAsArrayBuffer(e.target.files[0]);
+    // ignore other osu files.
+    const files = [];
+
+    for (let i = 0; i < e.target.files.length; i++) {
+        const file = e.target.files[i];
+        if (file.name == "collection.db" || file.name == "osu!.db") {
+            files.push(file);
+        }
     }
-});
 
-collecion_file.addEventListener("change", (e) => {
+    if (files.length != 2) {
+        throw error("some files cannot be found...\ntry loading the correct directory");
+    }
 
-    console.log(e.target.files);
-
-    if (!buffers.has("collection")) {
+    for (let i = 0; i < files.length; i++) {
 
         const reader = new FileReader();
+        
         reader.onload = () => {
+
             const array_buffer = reader.result;
-            buffers.set("collection", array_buffer);
-            can_run[1] = true;
+            const type_name = files[i].name == "collection.db" ? "collection" : "osu" || null;
+
+            console.log(type_name);
+
+            // ...
+            if (type_name == null) {
+                throw new Error("some files cannot be found...\ntry loading the correct directory");
+            }
+            
+            buffers.set(type_name, array_buffer);
+
+            can_run[i] = true; 
         };
 
-        reader.readAsArrayBuffer(e.target.files[0]);
+        reader.readAsArrayBuffer(files[i]);
     }
 });
 

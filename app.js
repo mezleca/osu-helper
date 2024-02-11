@@ -82,7 +82,7 @@ directory.addEventListener("change", (e) => {
     }
 
     if (files.length != 2) {
-        throw error("some files cannot be found...\ntry loading the correct directory");
+        throw new Error("some files cannot be found...\ntry loading the correct directory");
     }
 
     for (let i = 0; i < files.length; i++) {
@@ -100,7 +100,7 @@ directory.addEventListener("change", (e) => {
             if (type_name == null) {
                 throw new Error("some files cannot be found...\ntry loading the correct directory");
             }
-            
+
             buffers.set(type_name, array_buffer);
 
             can_run[i] = true; 

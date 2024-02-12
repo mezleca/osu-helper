@@ -169,7 +169,7 @@ select {
     text-align: center;
 }
 
-.maps_container h1 {
+.maps_container a {
     font-family: "Helvetica Neue";
     color: rgb(255, 255, 255);
     text-shadow: 1px 1px #000000;

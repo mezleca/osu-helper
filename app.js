@@ -8,6 +8,19 @@ const can_run = [false, false];
 
 let doing = false, created_div = false;
 
+const test = [
+   {
+     id: 419879,
+     artist: "black coast",
+     title: 'trndsttr'
+   },
+   {
+     id: 2125044,
+     artist: "-45",
+     title: "crimsonic dimension"
+   }
+]
+
 // i could use filter but fuck it 
 const remove_same_id_shit = (maps) => {
     const ids = [], no = [];
@@ -42,11 +55,15 @@ const append_map = (img_src, artist, title, mapper) => {
   img_element.src = img_src;
   img_element.alt = 'title';
 
-  const h1_element = document.createElement('span');
-  h1_element.innerHTML = artist + ' - ' + title + '<br>' + 'mapped by ' + mapper;
+  const a_element = document.createElement('a');
+  a_element.innerHTML = artist + ' - ' + title + '<br>' + 'mapped by ' + mapper;
+  
+  const id = img_src.split("/")
+  
+  a_element.href = `https://osu.ppy.sh/beatmapsets/${id[id.length - 3]}`;
 
   new_div.appendChild(img_element);
-  new_div.appendChild(h1_element);
+  new_div.appendChild(a_element);
 
   const target_div = document.getElementById('maps');
 
@@ -124,6 +141,30 @@ const get_data = async () => {
 };
 
 button.addEventListener("click", async () => {
+  
+    if (!can_run[1] && !can_run[0] && !doing) {
+        
+        create_container();
+        
+        doing = true;
+        created_div = true;
+      
+        for (let i = 0; i < test.length; i++) {
+          
+            const map = test[i];
+            
+            const title = map.title;
+            const artist = map.artist;
+            const id = map.id;
+            
+            append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, map.mapper);
+            
+        }
+        
+        doing = false;
+       
+        return;
+    }
 
     if (!can_run[0] || !can_run[1] || doing) {
         return;
@@ -239,8 +280,6 @@ button.addEventListener("click", async () => {
     if (maps.length == 0) {
         return append_map("invalid", "0 maps found", "", "");
     }
-
-    console.log(maps);
 
     const api_url = "https://api.osu.direct";
     const want_to_download = confirm("click yes to download");

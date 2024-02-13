@@ -21,30 +21,19 @@ const test = [
    }
 ]
 
-// i could use filter but fuck it 
 const remove_same_id_shit = (maps) => {
-    const ids = [], no = [];
-
-    if (maps.length == 0) {
-        return;
+  
+    if (maps.length === 0) {
+        return [];
     } 
     
-    maps.map((v) => {
-      
-      if (!v) {
-          return;
-      }
-
-      if (ids.includes(v)) {
-          return;
-      }
-
-      no.push(v);
-      ids.push(v);
+    const unique_ids = maps.filter((value, index, self) => {
+        return self.indexOf(value) === index;
     });
 
-    return no;
-};
+    return unique_ids;
+}; 
+
 
 const append_map = (img_src, artist, title, mapper) => {
 
@@ -59,7 +48,7 @@ const append_map = (img_src, artist, title, mapper) => {
   a_element.innerHTML = artist + ' - ' + title + '<br>' + 'mapped by ' + mapper;
   
   const id = img_src.split("/")
-  
+   //
   a_element.href = `https://osu.ppy.sh/beatmapsets/${id[id.length - 3]}`;
 
   new_div.appendChild(img_element);
@@ -157,7 +146,7 @@ button.addEventListener("click", async () => {
             const artist = map.artist;
             const id = map.id;
             
-            append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, map.mapper);
+            append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, "test");
             
         }
         

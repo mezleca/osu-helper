@@ -159,7 +159,7 @@ select {
     filter: blur(2px);         
 }
 
-.osu-popup span {
+.osu-popup a {
     font-family: "Arial";
     text-wrap: nowrap;
     z-index: 1;
@@ -169,12 +169,13 @@ select {
     text-align: center;
 }
 
-.maps_container a {
+.maps_container h1 {
     font-family: "Helvetica Neue";
     color: rgb(255, 255, 255);
     text-shadow: 1px 1px #000000;
     font-weight: 700;
     font-size: 26pt;
+    color: white;
 }
 
 #go {

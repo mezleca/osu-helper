@@ -59,7 +59,13 @@ const append_map = (img_src, artist, title, mapper) => {
   target_div.appendChild(new_div);
 }
 
-const create_container = () => {
+const create_container = (test) => {
+  
+    const title_exist = document.getElementById("title");
+    if (title_exist) {
+        title_exist.innerText = test ? "preview" : "maps";
+        return;
+    }
 
     const main_div = document.querySelector(".container");
 
@@ -69,7 +75,9 @@ const create_container = () => {
     container.setAttribute("class", "maps_container");
     container.setAttribute("id", "maps");
 
-    title.innerText = "maps";
+    title.setAttribute("id", "title");
+    
+    title.innerText = test ? "preview" : "maps";
 
     container.appendChild(title);
     main_div.appendChild(container);
@@ -100,19 +108,23 @@ directory.addEventListener("change", (e) => {
             const array_buffer = reader.result;
             const type_name = files[i].name == "collection.db" ? "collection" : "osu" || null;
 
-            console.log(type_name);
-
-            // ...
             if (type_name == null) {
                 throw new Error("some files cannot be found...\ntry loading the correct directory");
             }
 
             buffers.set(type_name, array_buffer);
 
-            can_run[i] = true; 
         };
 
         reader.readAsArrayBuffer(files[i]);
+    }
+    
+    if (buffers.has("osu")) {
+        can_run[0] = true;
+    }
+    
+    if (buffers.has("collection")) {
+        can_run[1] = true;
     }
 });
 
@@ -131,9 +143,12 @@ const get_data = async () => {
 
 button.addEventListener("click", async () => {
   
+    const type = document.getElementById("type").value;
+    const main = document.querySelector(".main");
+  
     if (!can_run[1] && !can_run[0] && !doing) {
         
-        create_container();
+        create_container(true);
         
         doing = true;
         created_div = true;
@@ -147,7 +162,7 @@ button.addEventListener("click", async () => {
             const id = map.id;
             
             append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, "test");
-            
+      
         }
         
         doing = false;
@@ -155,21 +170,20 @@ button.addEventListener("click", async () => {
         return;
     }
 
-    if (!can_run[0] || !can_run[1] || doing) {
+
+    // if there's no osu file and type id missing: return
+    if (!can_run[0] && type == "missing") {
+        alert("make sure the directory includes the osu db file");
         return;
     }
 
-    if (!created_div) {
-        create_container();
-    }
+  
+    create_container(false);
 
     doing = true;
     created_div = true;
 
     let collections = [];
-
-    const type = document.getElementById("type").value;
-    const main = document.querySelector(".main");
     
     await get_data();
 
@@ -252,87 +266,93 @@ button.addEventListener("click", async () => {
         doing = false;
         
         return;
-    }
-  
-    let maps = [];
-    for (const collection of reader.collections.beatmaps) {
-      for (const hash of collection.maps) {
-        if (!hashes.has(hash)) {
-            maps.push(
-              hash
-            );
-        }
-      }
-    }
-
-    maps = remove_same_id_shit(maps);
-    if (maps.length == 0) {
-        return append_map("invalid", "0 maps found", "", "");
-    }
-
-    const api_url = "https://api.osu.direct";
-    const want_to_download = confirm("click yes to download");
-
-    let downloaded = 0;
-
-    if (!want_to_download) {
-        alert("sure...");
-        return;
-    }
-
-    for (const md5 of maps) {
-
-        try {
-            // verify if the beatmapset exist's
-            const set_response = await fetch(`${api_url}/v2/md5/${md5}`, {
-                headers: {
-                    "Content-Type": "Application/json"
+        
+    } else if (type == "missing") {
+      
+            let maps = [];
+            for (const collection of reader.collections.beatmaps) {
+              for (const hash of collection.maps) {
+                if (!hashes.has(hash)) {
+                  maps.push(
+                    hash
+                  );
                 }
-            });
-
-            const set = await set_response.json();
-
-            if (!set.beatmapset_id) {
-                console.log("beatmapset not found");
-                continue;
+              }
             }
-
-            // download it 
-            const beatmap = await fetch(`${api_url}/d/${set.beatmapset_id}`, {
-                method: "GET"
-            });
-
-            const buffer = await beatmap.arrayBuffer();
-            const blob = new Blob([buffer], { type: "application/octet-stream" });
-
-            const link = document.createElement("a");
-            const url = window.URL.createObjectURL(blob);
-
-            link.href = url;
-            link.download = `${md5}.osz`;
-
-            document.body.appendChild(link);
-            link.click();
-
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-
-            downloaded++;
-
-        } catch(error) {
-
-            if (error.status == 404) {
-                console.log("set not found");
+        
+            maps = remove_same_id_shit(maps);
+            if (maps.length == 0) {
+              return append_map("invalid", "0 maps found", "", "");
             }
-            else {
-                console.log(error);
+        
+            const api_url = "https://api.osu.direct";
+            const want_to_download = confirm("click yes to download");
+        
+            let downloaded = 0;
+        
+            if (!want_to_download) {
+              alert("sure...");
+              return;
             }
-        }
+        
+            for (const md5 of maps) {
+        
+              try {
+                // verify if the beatmapset exist's
+                const set_response = await fetch(`${api_url}/v2/md5/${md5}`, {
+                  headers: {
+                    "Content-Type": "Application/json"
+                  }
+                });
+        
+                const set = await set_response.json();
+        
+                if (!set.beatmapset_id) {
+                  console.log("beatmapset not found");
+                  continue;
+                }
+        
+                // download it 
+                const beatmap = await fetch(`${api_url}/d/${set.beatmapset_id}`, {
+                  method: "GET"
+                });
+        
+                const buffer = await beatmap.arrayBuffer();
+                const blob = new Blob([buffer], { type: "application/octet-stream" });
+        
+                const link = document.createElement("a");
+                const url = window.URL.createObjectURL(blob);
+        
+                link.href = url;
+                link.download = `${md5}.osz`;
+        
+                document.body.appendChild(link);
+                link.click();
+        
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+        
+                downloaded++;
+        
+              } catch (error) {
+        
+                if (error.status == 404) {
+                  console.log("set not found");
+                }
+                else {
+                  console.log(error);
+                }
+              }
+            }
+        
+            if (downloaded > 0) {
+              alert(`finished downloading all ${downloaded} maps :3`);
+            }
+        
+            doing = false;
     }
-
-    if (downloaded > 0) {
-        alert(`finished download all ${downloaded} maps :3`);
+    else {
+        alert("W.I.P");
+        doing = true;
     }
-
-    doing = false;
 });

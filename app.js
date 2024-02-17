@@ -55,7 +55,7 @@ if (!('webkitdirectory' in window)) {
     const dir_label = document.getElementById("dir_label");
     const main_div = document.querySelector(".main");
     const title = document.getElementById("title");
-    const names = ["osu! file", "collection file"];
+    const names = ["osu!db file", "collection file"];
     
     main_div.removeChild(dir_label);
     main_div.removeChild(directory);

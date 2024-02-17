@@ -55,6 +55,7 @@ input {
 
 input[type='file'] {
     align-self: center;
+    margin-bottom: 10px;
 }
 
 button {
@@ -95,7 +96,7 @@ input[type=file]::before {
     right: 50;
     left: 50;
     transform: translateX(300%);
-    content: 'select';
+    content: 'select....';
     color: rgb(0, 0, 0);
     display: inline-block;
     background: -webkit-linear-gradient(top, #f9f9f9, #e3e3e3);

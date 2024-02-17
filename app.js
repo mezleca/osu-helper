@@ -62,25 +62,38 @@ const append_map = (img_src, artist, title, mapper) => {
 const create_container = (test) => {
   
     const title_exist = document.getElementById("title");
+    var maps_exist = document.getElementById("maps");
+    
     if (title_exist) {
+      
         title_exist.innerText = test ? "preview" : "maps";
-        return;
+        
+        if (maps_exist) {
+            maps_exist.remove();
+            maps_exist = false;
+        }
+        
     }
 
     const main_div = document.querySelector(".container");
-
     const container = document.createElement("div");
-    const title = document.createElement("h1");
-
+    
+    if (!maps_exist) {
+      
+        const title = document.createElement("h1");
+        
+        title.setAttribute("id", "title");
+        title.innerText = test ? "preview" : "maps";
+        
+        container.appendChild(title);
+    }
+    
     container.setAttribute("class", "maps_container");
     container.setAttribute("id", "maps");
 
-    title.setAttribute("id", "title");
-    
-    title.innerText = test ? "preview" : "maps";
-
-    container.appendChild(title);
-    main_div.appendChild(container);
+    if (!maps_exist) {
+        main_div.appendChild(container);  
+    }
 };
 
 directory.addEventListener("change", (e) => {

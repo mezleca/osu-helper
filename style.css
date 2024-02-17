@@ -94,8 +94,8 @@ input[type=file]::before {
     position: absolute;
     right: 50;
     left: 50;
-    transform: translate(134%);
-    content: 'select file';
+    transform: translateX(300%);
+    content: 'select';
     color: rgb(0, 0, 0);
     display: inline-block;
     background: -webkit-linear-gradient(top, #f9f9f9, #e3e3e3);

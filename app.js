@@ -6,7 +6,76 @@ const button = document.getElementById("go");
 const buffers = new Map();
 const can_run = [false, false];
 
-let doing = false, created_div = false;
+let doing = false, created_div = false, has_webkit;
+
+function insertAfter(referenceNode, newNode) {
+    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+}
+
+const check_file = (e) => {
+  
+  const already_exist = buffers.has(e.target.files[0].name);
+  
+  console.log(e.target.files[0].name)
+
+  if (e.target.files[0].name != "osu.db" && e.target.files[0].name != "collection.db") {
+    alert("wrong file...");
+    return false;
+  }
+  
+  if (already_exist) {
+      return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+
+      const array_buffer = reader.result;
+      const type_name = e.target.files[0].name == "collection.db" ? "collection" : "osu" || null;
+
+      if (type_name == null) {
+          throw new Error("some files cannot be found...\ntry loading the correct directory");
+      }
+      
+      if (buffers.has(type_name)) {
+          return alert("you already selected that file.");
+      }
+    
+      buffers.set(type_name, array_buffer);
+  };
+  
+  reader.readAsArrayBuffer(e.target.files[0]);
+};
+
+if (!('webkitdirectory' in window)) {
+  
+    // remove o input directory e adc outros 2:
+    
+    
+    const dir_label = document.getElementById("dir_label");
+    const main_div = document.querySelector(".main");
+    const title = document.getElementById("title");
+    const names = ["osu! file", "collection file"];
+    
+    main_div.removeChild(dir_label);
+    main_div.removeChild(directory);
+  
+    for (let i = 0; i < 2; i++) {
+      
+        const input = document.createElement("input");
+        input.type = "file";
+        input.name = names[i];
+        
+        const label = document.createElement("label");
+        label.innerText = names[i];
+        
+        input.addEventListener("change", check_file, false);
+        
+        insertAfter(title, input);
+        insertAfter(title, label);
+        
+    }
+}
 
 const test = [
    {
@@ -33,7 +102,6 @@ const remove_same_id_shit = (maps) => {
 
     return unique_ids;
 }; 
-
 
 const append_map = (img_src, artist, title, mapper) => {
 
@@ -115,7 +183,6 @@ directory.addEventListener("change", (e) => {
     for (let i = 0; i < files.length; i++) {
 
         const reader = new FileReader();
-        
         reader.onload = () => {
 
             const array_buffer = reader.result;
@@ -131,7 +198,7 @@ directory.addEventListener("change", (e) => {
 
         reader.readAsArrayBuffer(files[i]);
     }
-    
+  
     if (buffers.has("osu")) {
         can_run[0] = true;
     }
@@ -155,6 +222,14 @@ const get_data = async () => {
 };
 
 button.addEventListener("click", async () => {
+  
+    if (buffers.has("osu")) {
+        can_run[0] = true;
+    }
+    
+    if (buffers.has("collection")) {
+        can_run[1] = true;
+    }
   
     const type = document.getElementById("type").value;
     const main = document.querySelector(".main");

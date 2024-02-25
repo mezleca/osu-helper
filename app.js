@@ -150,11 +150,45 @@ const get_file_from_dir = (e) => {
     if (buffers.has("collection")) {
         can_run[1] = true;
     }
+
+    if (can_run[0] && can_run[1]) {
+
+        // "remove" input div
+        const dir = document.querySelector(".dir");
+        const dir_label = document.querySelector("#dir_label");
+
+        dir.style.display = none;
+        dir_label.style.display = none;
+    }
+};
+
+const do_preview = () => {
+
+    // preview thing
+
+    create_container(true);
+          
+    doing = true;
+    created_div = true;
+
+    for (let i = 0; i < test.length; i++) {
+      
+        const map = test[i];      
+        const title = map.title;
+        const artist = map.artist;
+        const id = map.id;
+        
+        append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, "test");
+    }
+    
+    doing = false;
 };
 
 directory_button.addEventListener("click", () => {
+
      // check if buffer already exist's
      if (buffers.has("osu") || buffers.has("collection")) {
+          alert("files have already loaded!");
           return;
      }
 
@@ -175,6 +209,8 @@ button.addEventListener("click", async () => {
     const type = document.getElementById("type").value;
     const main = document.querySelector(".main");
 
+    const invalid_buffer = !can_run[1] && !can_run[0];
+
     let collections = [];
     let index = 0;
   
@@ -186,24 +222,8 @@ button.addEventListener("click", async () => {
         can_run[1] = true;
     }
   
-    if (!can_run[1] && !can_run[0] && !doing) {
-        
-        create_container(true);
-        
-        doing = true;
-        created_div = true;
-      
-        for (let i = 0; i < test.length; i++) {
-          
-            const map = test[i];      
-            const title = map.title;
-            const artist = map.artist;
-            const id = map.id;
-            
-            append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, "test");
-        }
-        
-        doing = false;
+    if (invalid_buffer && !doing) {
+        do_preview();
         return;
     }
 
@@ -298,7 +318,9 @@ button.addEventListener("click", async () => {
         
         return;
         
-    } else if (type == "missing") {
+    } 
+    
+    if (type == "missing") {
       
             let maps = [];
             for (const collection of reader.collections.beatmaps) {
@@ -383,9 +405,7 @@ button.addEventListener("click", async () => {
             doing = false;
     }
     else {
-        
-        
-
+        // TODO
         doing = true;
     }
 });

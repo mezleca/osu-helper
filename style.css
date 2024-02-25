@@ -179,6 +179,15 @@ select {
     color: white;
 }
 
+.dir {
+    border: 2px solid grey;
+    max-width: 20%;
+}
+
+.dir:hover {
+    border: 2px solid blue;
+}
+
 #go {
     margin-top: 15px;
     font-family: "Helvetica Neue";

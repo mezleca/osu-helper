@@ -2,92 +2,24 @@ import { OsuReader } from "./scripts/reader.js";
 
 const directory = document.getElementById("directory");
 const button = document.getElementById("go");
+const directory_button = document.querySelector(".dir");
 
 const buffers = new Map();
 const can_run = [false, false];
 
-let doing = false, created_div = false, has_webkit;
-
-function insertAfter(referenceNode, newNode) {
-    referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-}
-
-const check_file = (e) => {
-  
-  const already_exist = buffers.has(e.target.files[0].name);
-  
-  console.log(e.target.files[0].name)
-
-  if (e.target.files[0].name != "osu.db" && e.target.files[0].name != "collection.db") {
-    alert("wrong file...");
-    return false;
-  }
-  
-  if (already_exist) {
-      return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = () => {
-
-      const array_buffer = reader.result;
-      const type_name = e.target.files[0].name == "collection.db" ? "collection" : "osu" || null;
-
-      if (type_name == null) {
-          throw new Error("some files cannot be found...\ntry loading the correct directory");
-      }
-      
-      if (buffers.has(type_name)) {
-          return alert("you already selected that file.");
-      }
-    
-      buffers.set(type_name, array_buffer);
-  };
-  
-  reader.readAsArrayBuffer(e.target.files[0]);
-};
-
-if (!('webkitdirectory' in window)) {
-  
-    // remove o input directory e adc outros 2:
-    
-    
-    const dir_label = document.getElementById("dir_label");
-    const main_div = document.querySelector(".main");
-    const title = document.getElementById("title");
-    const names = ["osu!db file", "collection file"];
-    
-    main_div.removeChild(dir_label);
-    main_div.removeChild(directory);
-  
-    for (let i = 0; i < 2; i++) {
-      
-        const input = document.createElement("input");
-        input.type = "file";
-        input.name = names[i];
-        
-        const label = document.createElement("label");
-        label.innerText = names[i];
-        
-        input.addEventListener("change", check_file, false);
-        
-        insertAfter(title, input);
-        insertAfter(title, label);
-        
-    }
-}
+let doing = false, created_div = false;
 
 const test = [
-   {
-     id: 419879,
-     artist: "black coast",
-     title: 'trndsttr'
-   },
-   {
-     id: 2125044,
-     artist: "-45",
-     title: "crimsonic dimension"
-   }
+  {
+    id: 419879,
+    artist: "black coast",
+    title: 'trndsttr'
+  },
+  {
+    id: 2125044,
+    artist: "-45",
+    title: "crimsonic dimension"
+  }
 ]
 
 const remove_same_id_shit = (maps) => {
@@ -116,7 +48,7 @@ const append_map = (img_src, artist, title, mapper) => {
   a_element.innerHTML = artist + ' - ' + title + '<br>' + 'mapped by ' + mapper;
   
   const id = img_src.split("/")
-   //
+  
   a_element.href = `https://osu.ppy.sh/beatmapsets/${id[id.length - 3]}`;
 
   new_div.appendChild(img_element);
@@ -164,9 +96,21 @@ const create_container = (test) => {
     }
 };
 
-directory.addEventListener("change", (e) => {
+const reader = new OsuReader();
 
-    // ignore other osu files.
+const get_data = async () => {
+
+    reader.set_type("collection");
+    reader.set_buffer(buffers.get("collection"));
+    await reader.get_collections_data();
+
+    reader.set_type("osu");
+    reader.set_buffer(buffers.get("osu"));
+    await reader.get_osu_data();
+};
+
+const get_file_from_dir = (e) => {
+ 
     const files = [];
 
     for (let i = 0; i < e.target.files.length; i++) {
@@ -198,7 +142,7 @@ directory.addEventListener("change", (e) => {
 
         reader.readAsArrayBuffer(files[i]);
     }
-  
+
     if (buffers.has("osu")) {
         can_run[0] = true;
     }
@@ -206,22 +150,33 @@ directory.addEventListener("change", (e) => {
     if (buffers.has("collection")) {
         can_run[1] = true;
     }
-});
-
-const reader = new OsuReader();
-
-const get_data = async () => {
-
-    reader.set_type("collection");
-    reader.set_buffer(buffers.get("collection"));
-    await reader.get_collections_data();
-
-    reader.set_type("osu");
-    reader.set_buffer(buffers.get("osu"));
-    await reader.get_osu_data();
 };
 
+directory_button.addEventListener("click", () => {
+     // check if buffer already exist's
+     if (buffers.has("osu") || buffers.has("collection")) {
+          return;
+     }
+
+     const input = document.createElement("input");
+     input.type = "file";
+     input.setAttribute("webkitdirectory", true);
+
+     input.click();
+
+     input.addEventListener("change", (e) => {
+        get_file_from_dir(e);
+        input.removeEventListener("change", get_file_from_dir, false);
+     }, false);
+});
+
 button.addEventListener("click", async () => {
+
+    const type = document.getElementById("type").value;
+    const main = document.querySelector(".main");
+
+    let collections = [];
+    let index = 0;
   
     if (buffers.has("osu")) {
         can_run[0] = true;
@@ -230,9 +185,6 @@ button.addEventListener("click", async () => {
     if (buffers.has("collection")) {
         can_run[1] = true;
     }
-  
-    const type = document.getElementById("type").value;
-    const main = document.querySelector(".main");
   
     if (!can_run[1] && !can_run[0] && !doing) {
         
@@ -243,35 +195,28 @@ button.addEventListener("click", async () => {
       
         for (let i = 0; i < test.length; i++) {
           
-            const map = test[i];
-            
+            const map = test[i];      
             const title = map.title;
             const artist = map.artist;
             const id = map.id;
             
             append_map(`https://assets.ppy.sh/beatmaps/${id}/covers/cover@2x.jpg`, artist, title, "test");
-      
         }
         
         doing = false;
-       
         return;
     }
-
 
     // if there's no osu file and type id missing: return
     if (!can_run[0] && type == "missing") {
         alert("make sure the directory includes the osu db file");
         return;
     }
-
   
     create_container(false);
 
     doing = true;
     created_div = true;
-
-    let collections = [];
     
     await get_data();
 
@@ -328,8 +273,6 @@ button.addEventListener("click", async () => {
                 return;
             }            
         });
-
-        let index = 0;
 
         const interval = setInterval(() => {
 
@@ -440,7 +383,9 @@ button.addEventListener("click", async () => {
             doing = false;
     }
     else {
-        alert("W.I.P");
+        
+        
+
         doing = true;
     }
 });

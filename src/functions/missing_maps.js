@@ -4,20 +4,25 @@ import axios from "axios";
 import PromptSync from "prompt-sync";
 
 import { OsuReader } from "../reader/reader.js";
-import { auth, tools, download } from 'osu-api-extended';
+import { auth } from 'osu-api-extended';
 import { config } from "../config.js";
 
 // login :3
-const login = await auth.login(config.osu_id, config.osu_secret, ['public']);
+const login = await auth.login(config.get("osu_id"), config.get("osu_secret"), ['public']);
 
 const reader = new OsuReader();
 const prompt = PromptSync();
 
-const osu_path = path.resolve("E:\\osu!");
+if (!fs.existsSync(config.get("osu_path")) || !fs.existsSync(config.get("osu_songs_folder"))) {
+    console.clear();
+    console.log("osu path is invalid!\nplease update your config.js file with the osu / osu songs correct path");
+    process.exit(1);
+}
+
+const osu_path = config.get("osu_path");
 const osu_file = fs.readFileSync(path.resolve(osu_path, "osu!.db"));
 const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"));
 
-let count = 0;
 let missing_maps = [];
 let invalid = [];
 
@@ -30,66 +35,54 @@ const options = [
     }
 ];
 
+const base_url = "https://api.osu.direct/";
+
 export const search_map_id = async (hash) => {
 
-    try {
-        const base = "https://osu.ppy.sh/api/v2/beatmaps/lookup?"
-        const response = await axios.get(`${base}checksum=${hash}`, {
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                Authorization: `Bearer ${login.access_token}`
-            }
-        });
+    const response = await axios.get(`${base_url}v2/md5/${hash}`);
+    const data = await response.data;
 
-        const data = await response.data;
-        return data;
-    } catch(err) {
+    if (response.status == 404) {
+        console.log(response.statusText);
         return false;
     }
-};
 
-const base_url = "https://api.chimu.moe/v1/download/";
+    return data;
+};
 
 const download_map = async (b) => {
 
-    console.log("downloading map:", count + 1);
-
-    try {
-        const response = await axios.get(`${base_url}${b}`, {
-            responseType: "stream",
-            method: "GET",
-        });
-
-        const stream = fs.createWriteStream(path.resolve("./data/", `${b}.osz`));
-        response.data.pipe(stream);
-
-        await new Promise((resolve, reject) => {
-            stream.on("finish", resolve);
-            stream.on("error", (err) => {
-                console.error("error:", b, err);
-                reject(err);
-            });
-        });
-    } catch (error) {
-        if (error.response) {
-            console.error("api error:", error.response, b);
-        }
-        else {
-            console.log("yep that was an error...");
-        }
+    const response = await fetch(`${base_url}d/${b}`, { method: "GET" });
+    const Path = path.resolve("./data/", `${b}.osz`);
+    const buffer = await response.arrayBuffer();
+    
+    if (response.status == 404) {
+        throw Error("Map not found");
     }
 
-    count++;
+    fs.writeFileSync(Path, Buffer.from(buffer));
 };
 
 const download_maps = async () => {
     
     invalid = [];
+    let index = 0;
 
+    let sp = " "; // % spaces
+    let bar = "█"; // barras
+
+    // TODO: concurrent download ( 4 maps limit )
     for (const map of missing_maps) {
 
         try {
+
+            let perc = Math.floor(index / missing_maps.length *  100); // %
+            let bars = Math.floor(perc / 10); // quantidade de barras
+
+            process.stdout.clearLine(); // limpa a linha atual
+            process.stdout.cursorTo(0); // move para o inicio da linha
+
+            process.stdout.write(`[${bar.repeat(bars)}${sp.repeat(10 - bars)}] ${100 - perc}% remaining`);
 
             const hash = map.hash;
             const id = (await search_map_id(hash)).beatmapset_id;
@@ -102,10 +95,18 @@ const download_maps = async () => {
             }
 
         } catch(error) {;
-            console.log(error.response)
             invalid.push({ hash: map.hash });
-        }    
+            if (error.data) {
+                console.log(error.data.message);
+            }
+        }
+
+	    index++;
     }
+
+    process.stdout.clearLine();
+    process.stdout.cursorTo(0);
+    process.stdout.write(`[${bar.repeat(10)}] 0% remaining`);
 
     console.log(`\ndone\nfailed to download ${invalid.length} maps.\nreason: outdated/invalid map.\n`);
 };
@@ -165,9 +166,9 @@ const export_shit = async () => {
                 
                 const map = missing_maps[i];
                 const hash = map.hash;
-                const info = await search_map_id(hash);     
+                const info = await search_map_id(hash);   
                 
-                if (info) {
+                if (info.beatmapset_id) {
                     ids.push(`https://osu.ppy.sh/beatmapsets/${info.beatmapset_id}`);
                 }
     
@@ -184,6 +185,8 @@ const export_shit = async () => {
     const o = [...new Set(ids)];
 
     fs.writeFileSync("./data/beatmaps.json", JSON.stringify(o, null , 4));
+
+    console.log("beatmaps.json has been saved in the data folder");
 };
 
 export const missing_initialize = async () => {
@@ -196,6 +199,7 @@ export const missing_initialize = async () => {
     // initialize for reading osu!.db
     reader.set_type("osu");
     reader.set_directory(config.osu_path);
+    reader.set_directory(osu_path);
     reader.set_buffer(osu_file);
 
     await reader.get_osu_data();

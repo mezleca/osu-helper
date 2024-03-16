@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import PromptSync from "prompt-sync";
 
+import { config } from "./config.js";
 import { missing_initialize } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";

@@ -1,7 +1,11 @@
-export const config = {
-    /* API info (OAuth): https://osu.ppy.sh/home/account/edit */
-    osu_id: "",
-    osu_secret: "",
-    osu_path: "",
-    osu_songs_folder: ""
-};
+
+import { check_config } from "./utils.js";
+export const config = new Map();
+
+// Update the config files HEREE!!!!!!!!!!!!!!!::::
+config.set("osu_id", "");
+config.set("osu_secret", "");
+config.set("osu_path", "");
+config.set("osu_songs_folder", "");
+
+check_config();

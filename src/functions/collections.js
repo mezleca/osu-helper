@@ -8,17 +8,23 @@ import { auth } from 'osu-api-extended';
 import { config } from "../config.js";
 import { search_map_id } from "./missing_maps.js";
 
+if (!fs.existsSync(config.get("osu_path")) || !fs.existsSync(config.get("osu_songs_folder"))) {
+    console.clear();
+    console.log("osu path is invalid!\nplease update your config.js file with the osu / osu songs correct path");
+    process.exit(1);
+}
+
 // login :3
-const login = await auth.login(config.osu_id, config.osu_secret, ['public']);
+const login = await auth.login(config.get("osu_id"), config.get("osu_secret"), ['public']);
 
 const reader = new OsuReader();
 const prompt = PromptSync();
 
-reader.set_directory(path.resolve(config.osu_path));
+reader.set_directory(path.resolve(config.get("osu_path")));
 
 const get_collections = async () => {
     
-    const collections_buffer = fs.readFileSync(path.resolve(config.osu_path, "collection.db"));
+    const collections_buffer = fs.readFileSync(path.resolve(config.get("osu_path"), "collection.db"));
     reader.set_buffer(Buffer.from(collections_buffer));
 
     await reader.get_collections_data();
@@ -26,7 +32,7 @@ const get_collections = async () => {
 
 const get_osu = async () => {
     
-    const buffer = fs.readFileSync(path.resolve(config.osu_path, "osu!.db"));
+    const buffer = fs.readFileSync(path.resolve(config.get("osu_path"), "osu!.db"));
     reader.set_buffer(Buffer.from(buffer));
 
     await reader.get_osu_data();

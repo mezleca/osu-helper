@@ -198,7 +198,6 @@ export const missing_initialize = async () => {
     
     // initialize for reading osu!.db
     reader.set_type("osu");
-    reader.set_directory(config.osu_path);
     reader.set_directory(osu_path);
     reader.set_buffer(osu_file);
 

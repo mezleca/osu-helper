@@ -8,7 +8,7 @@
 basically a collection helper
 
 # usage
-- go to the config.js file and enter the request information.
+- go to the config.js file and enter the requested information.
 - start the script with npm start.
 
 # todo

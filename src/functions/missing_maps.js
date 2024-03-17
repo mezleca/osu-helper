@@ -2,10 +2,14 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import PromptSync from "prompt-sync";
+import fetch from "node-fetch"
 
 import { OsuReader } from "../reader/reader.js";
 import { auth } from 'osu-api-extended';
 import { config } from "../config.js";
+
+import pkg from 'bluebird';
+const { Promise } = pkg;
 
 // login :3
 const login = await auth.login(config.get("osu_id"), config.get("osu_secret"), ['public']);
@@ -39,15 +43,29 @@ const base_url = "https://api.osu.direct/";
 
 export const search_map_id = async (hash) => {
 
-    const response = await axios.get(`${base_url}v2/md5/${hash}`);
-    const data = await response.data;
+    try {
+        const base = "https://osu.ppy.sh/api/v2/beatmaps/lookup?"
+        const response = await axios.get(`${base}checksum=${hash}`, {
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                Authorization: `Bearer ${login.access_token}`
+            }
+        });
 
-    if (response.status == 404) {
-        console.log(response.statusText);
+        const data = await response.data;
+        
+        //console.log(data.beatmapset_id);
+
+        return data;
+    } catch(err) {
+        if (err.response) {
+            //console.log(err.response.statusText)
+            return false; 
+        }
+        //console.log(err);
         return false;
     }
-
-    return data;
 };
 
 const download_map = async (b) => {
@@ -63,52 +81,54 @@ const download_map = async (b) => {
     fs.writeFileSync(Path, Buffer.from(buffer));
 };
 
-const download_maps = async () => {
-    
-    invalid = [];
-    let index = 0;
+const progress_bar = (start_, end) => {
 
-    let sp = " "; // % spaces
-    let bar = "█"; // barras
+    let sp = " "; 
+    let bar = "█"; 
 
-    // TODO: concurrent download ( 4 maps limit )
-    for (const map of missing_maps) {
+    const start = current_index;
 
-        try {
+    let perc = Math.floor(start / end * 100); 
+    let bars = Math.floor(perc / 10); 
 
-            let perc = Math.floor(index / missing_maps.length *  100); // %
-            let bars = Math.floor(perc / 10); // quantidade de barras
-
-            process.stdout.clearLine(); // limpa a linha atual
-            process.stdout.cursorTo(0); // move para o inicio da linha
-
-            process.stdout.write(`[${bar.repeat(bars)}${sp.repeat(10 - bars)}] ${100 - perc}% remaining`);
-
-            const hash = map.hash;
-            const id = (await search_map_id(hash)).beatmapset_id;
-
-            if (!id) {
-                invalid.push({ hash: map.hash });
-            }
-            else {
-                await download_map(id);
-            }
-
-        } catch(error) {;
-            invalid.push({ hash: map.hash });
-            if (error.data) {
-                console.log(error.data.message);
-            }
-        }
-
-	    index++;
+    if (bars < 0) {
+        bars = 0;
     }
 
-    process.stdout.clearLine();
-    process.stdout.cursorTo(0);
-    process.stdout.write(`[${bar.repeat(10)}] 0% remaining`);
+    process.stdout.clearLine(); 
+    process.stdout.cursorTo(0); 
 
-    console.log(`\ndone\nfailed to download ${invalid.length} maps.\nreason: outdated/invalid map.\n`);
+    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat(10 - bars)}] ${end - start} maps remaining`);
+}
+
+const invalid_maps = [];
+let current_index = 0;
+
+const download_maps = async (map, index, length) => {
+
+    const hash = map.hash;
+    
+    try {
+
+        const id = (await search_map_id(hash)).beatmapset_id;
+        if (!id) {
+            invalid_maps.push({ hash: map.hash });
+            return;
+        }
+
+        progress_bar(index, length);
+        
+        await download_map(id);
+    
+    } catch(error) {;
+        invalid_maps.push({ hash: map.hash });
+        console.log(error);
+        if (error.data) {
+            console.log(error.data.message);
+        }
+    }
+
+    current_index++;
 };
 
 const download_things = async () => {
@@ -131,7 +151,9 @@ const download_things = async () => {
         console.log("Found:", missing_maps.length, "maps");
     }
 
-    await download_maps();
+    await Promise.map(missing_maps, download_maps, { concurrency: 3 });
+
+    console.log(`\ndone\nfailed to download ${invalid_maps.length} maps.\nreason: outdated/invalid map.\n`);
 };
 
 const export_shit = async () => {

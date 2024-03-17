@@ -42,7 +42,7 @@ const main = async () => {
     
     while (true) {
 
-        console.log("\nosu-thing v0.1 ( type exit to... exit? )\n");
+        console.log("osu-thing v0.2 ( type exit to... exit? )\n");
         
         if (current_option == null) {
             current_option = select_option();

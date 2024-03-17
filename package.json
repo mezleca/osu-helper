@@ -1,7 +1,7 @@
 {
-    "name": "app",
-    "version": "0.2",
-    "description": "",
+    "name": "osu-helper",
+    "version": "0.25",
+    "description": "osu helper",
     "scripts": {
         "start": "node src/thing.js"
     },

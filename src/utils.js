@@ -1,13 +1,25 @@
 import fs from "fs";
 
 import { config } from "./config.js";
+import { auth } from "osu-api-extended"
+
 import PromptSync from "prompt-sync";
 
 const prompt = PromptSync();
-
 const missing_config = [];
 
-console.clear();
+export const check_login = async () => {
+    try {
+        const login = await auth.login(config.get("osu_id"), config.get("osu_secret"), ['public']);
+        if (!login.access_token) {
+            console.log("hmm it seems your osu_id / osu_secret is invalid...\nmake sure to use the correct shit in the config.js file");
+            process.exit(1);
+        }
+        return login;
+    } catch (err) {
+        process.exit(1);
+    }
+};
 
 export const check_config = () => {
     config.forEach((v, k) => {

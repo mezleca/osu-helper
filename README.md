@@ -1,14 +1,14 @@
-# thing
+# osu-helper-node
 
-script for downloading missing maps from collections, exporting, etc.</br>
-basically a bunch of scripts i made for myself to use.
+a node js script to download missing maps from collections | remove invalid maps from collections | export missing maps from collections </br>
+basically a collection helper
 
-# functions
-- download missing maps.
-- export missing maps to a json file.
-- download missing maps from a json.
+# usage
+- go to the config.js file and enter the request information.
+- start the script with npm start.
 
 # todo
+- [ ] rewrite some scripts.
 - [ ] implement the read/write scripts.
-- [ ] fix bugs/crashes.
+- [x] fix bugs/crashes.
 - [x] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc.)

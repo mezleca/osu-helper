@@ -2,10 +2,13 @@ import fs from "fs";
 import path from "path";
 import PromptSync from "prompt-sync";
 
-import { config } from "./config.js";
+// login :3
+export const login = await check_login();
+
 import { missing_initialize } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";
+import { check_login  } from "./utils.js";
 
 const prompt = PromptSync();
 const menu_options = [
@@ -42,7 +45,7 @@ const main = async () => {
     
     while (true) {
 
-        console.log("osu-thing v0.2 ( type exit to... exit? )\n");
+        console.log("osu-thing v0.25 ( type exit to... exit? )\n");
         
         if (current_option == null) {
             current_option = select_option();

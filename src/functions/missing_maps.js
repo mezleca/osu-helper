@@ -3,16 +3,13 @@ import path from "path";
 import axios from "axios";
 import PromptSync from "prompt-sync";
 import fetch from "node-fetch"
+import pkg from 'bluebird';
 
 import { OsuReader } from "../reader/reader.js";
-import { auth } from 'osu-api-extended';
 import { config } from "../config.js";
+import { login } from "../thing.js";
 
-import pkg from 'bluebird';
 const { Promise } = pkg;
-
-// login :3
-const login = await auth.login(config.get("osu_id"), config.get("osu_secret"), ['public']);
 
 const reader = new OsuReader();
 const prompt = PromptSync();
@@ -44,6 +41,7 @@ const base_url = "https://api.osu.direct/";
 export const search_map_id = async (hash) => {
 
     try {
+
         const base = "https://osu.ppy.sh/api/v2/beatmaps/lookup?"
         const response = await axios.get(`${base}checksum=${hash}`, {
             headers: {
@@ -54,16 +52,12 @@ export const search_map_id = async (hash) => {
         });
 
         const data = await response.data;
-        
-        //console.log(data.beatmapset_id);
 
         return data;
     } catch(err) {
         if (err.response) {
-            //console.log(err.response.statusText)
             return false; 
         }
-        //console.log(err);
         return false;
     }
 };

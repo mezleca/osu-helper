@@ -1,10 +1,8 @@
 import fs from "fs";
 import path from "path";
-import axios from "axios";
 import PromptSync from "prompt-sync";
 
 import { OsuReader } from "../reader/reader.js";
-import { auth } from 'osu-api-extended';
 import { config } from "../config.js";
 import { search_map_id } from "./missing_maps.js";
 
@@ -13,9 +11,6 @@ if (!fs.existsSync(config.get("osu_path")) || !fs.existsSync(config.get("osu_son
     console.log("osu path is invalid!\nplease update your config.js file with the osu / osu songs correct path");
     process.exit(1);
 }
-
-// login :3
-const login = await auth.login(config.get("osu_id"), config.get("osu_secret"), ['public']);
 
 const reader = new OsuReader();
 const prompt = PromptSync();

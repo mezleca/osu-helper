@@ -1,6 +1,10 @@
 # osu-helper-node
 
-a node js script to download missing maps from collections | remove invalid maps from collections | export missing maps from collections </br>
+## a node js script made to:
+- download missing maps from collections 
+- remove invalid maps from collections 
+- export missing maps from collections 
+
 basically a collection helper
 
 # usage

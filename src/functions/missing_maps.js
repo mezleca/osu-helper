@@ -26,6 +26,9 @@ const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"))
 
 let missing_maps = [];
 let invalid = [];
+let current_index = 0;
+
+const invalid_maps = [];
 
 const options = [
     {
@@ -94,9 +97,6 @@ const progress_bar = (start_, end) => {
 
     process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat(10 - bars)}] ${end - start} maps remaining`);
 }
-
-const invalid_maps = [];
-let current_index = 0;
 
 const download_maps = async (map, index, length) => {
 

@@ -33,7 +33,20 @@ const options = [
     }
 ];
 
-const base_url = "https://api.osu.direct/";
+const mirrors = [
+    {
+        name: "direct",
+        url: "https://api.osu.direct/d/"
+    },
+    {
+        name: "nerinyan",
+        url: "https://api.nerinyan.moe/d/"
+    },
+    {
+        name: "chimue",
+        url: "https://api.chimu.moe/v1/download/"
+    }
+];
 
 export const search_map_id = async (hash) => {
 
@@ -61,15 +74,30 @@ export const search_map_id = async (hash) => {
 
 const download_map = async (b) => {
 
-    const response = await fetch(`${base_url}d/${b}`, { method: "GET" });
     const Path = path.resolve("./data/", `${b}.osz`);
-    const buffer = await response.arrayBuffer();
-    
-    if (response.status != 200) {
-        throw Error("Map not found");
+
+    for (let i = 0; i < mirrors.length; i++) {
+
+        const api = mirrors[i];
+        const params = {};
+
+        if (api.name == "nerinyan") {
+            params.NoHitsound = "true";
+            params.NoStoryBoard = true;
+        }
+
+        const response = await fetch(`${api.url}${b}`, { method: "GET", params });
+        const buffer = await response.arrayBuffer();
+
+        if (response.status != 200) {
+            continue;
+        }
+
+        fs.writeFileSync(Path, Buffer.from(buffer));
+
+        break;
     }
 
-    fs.writeFileSync(Path, Buffer.from(buffer));
 };
 
 const progress_bar = (start_, end) => {
@@ -81,15 +109,20 @@ const progress_bar = (start_, end) => {
 
     let perc = Math.floor(start / end * 100); 
     let bars = Math.floor(perc / 10); 
+    let spaces = 10 - bars;
 
     if (bars < 0) {
         bars = 0;
     }
 
+    if (spaces < 0) {
+        spaces = 0;
+    }
+
     process.stdout.clearLine(); 
     process.stdout.cursorTo(0); 
 
-    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat(10 - bars)}] ${end - start} maps remaining`);
+    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat(spaces)}] ${end - start} maps remaining`);
 }
 
 const download_maps = async (map, index, length) => {

@@ -5,7 +5,7 @@ import PromptSync from "prompt-sync";
 // login :3
 export const login = await check_login();
 
-import { missing_initialize } from "./functions/missing_maps.js";
+import { missing_initialize, get_beatmaps_collector } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";
 import { check_login  } from "./utils.js";
@@ -23,6 +23,10 @@ const menu_options = [
     {
         name: "remove invalid maps from collections",
         func: get_invalid_maps
+    },
+    {
+        name: "get beatmaps from osu!Collector",
+        func: get_beatmaps_collector
     }
 ];
 

@@ -2,6 +2,7 @@
 
 ## a node js script made to:
 - download missing maps from collections 
+- download maps from a osuCollector URL
 - remove invalid maps from collections 
 - export missing maps from collections 
 

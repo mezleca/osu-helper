@@ -104,16 +104,22 @@ const download_maps = async (map, index, length) => {
     
     try {
 
-        const id = (await search_map_id(hash)).beatmapset_id;
-        if (!id) {
-            invalid_maps.push({ hash: map.hash });
-            return;
+        progress_bar(index, length);
+
+        if (!map.id) {
+            
+            const id = (await search_map_id(hash)).beatmapset_id;
+            if (!id) {
+                invalid_maps.push({ hash: map.hash });
+                current_index++;
+                return;
+            }
+
+            map.id = id;
         }
 
-        progress_bar(index, length);
-        
-        await download_map(id);
-    
+        await download_map(map.id);
+           
     } catch(error) {;
         invalid_maps.push({ hash: map.hash });
         console.log(error);
@@ -129,14 +135,14 @@ const download_things = async () => {
     
     if (prompt("download from a specific collection? (y/n): ") == "y") {
 
-        const collections = [...new Set(missing_maps.map(a => a.collecton_name))];
+        const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
         const name = prompt("collection name: ");
 
-        missing_maps = missing_maps.filter((a) => { return a.collecton_name == name })
+        missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
         if (!missing_maps) {
             console.log("collection not found.");
             return;
@@ -147,20 +153,24 @@ const download_things = async () => {
 
     await Promise.map(missing_maps, download_maps, { concurrency: 3 });
 
-    console.log(`\ndone\nfailed to download ${invalid_maps.length} maps.\nreason: outdated/invalid map.\n`);
+    console.log(`\ndone!`);
+
+    if (invalid_maps.length > 0) {
+        console.log(`\nfailed to download ${invalid_maps.length} maps.\nreason: outdated/invalid map.\n`);
+    }
 };
 
 const export_shit = async () => {
 
     if (prompt("export from a specific collection? (y/n): ") == "y") {
 
-        const collections = [...new Set(missing_maps.map(a => a.collecton_name))];
+        const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
         const name = prompt("collection name: ");
-        missing_maps = missing_maps.filter((a) => { return a.collecton_name == name })
+        missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
 
         if (!missing_maps) {
             console.log("collection not found.");
@@ -205,6 +215,43 @@ const export_shit = async () => {
     console.log("beatmaps.json has been saved in the data folder");
 };
 
+export const get_beatmaps_collector = async () => {
+
+    console.clear();
+
+    // get collection maps
+    const url = prompt("url: ");
+
+    // get collection id
+    const url_array = url.split("/");
+    const collection_id = url_array[url_array.length - 2];
+
+    //console.log(collection_id);
+
+    // request collection data from osuCollector api
+    const collection_url = `https://osucollector.com/api/collections/${collection_id}`;
+    const collection = await axios.get(collection_url);
+
+    if (collection.status != 200) {
+        return console.log("\ncollection not found");
+    }
+
+    const data = await collection.data;
+
+    // create a new array like missing_maps
+    const maps = data.beatmapsets.map((b) => { return { id: b.id } });
+
+    console.log(`Found ${maps.length} maps\ndownloading...`);
+
+    await Promise.map(maps, download_maps, { concurrency: 3 });
+
+    console.log(`\ndone!`);
+
+    if (invalid_maps.length > 0) {
+        console.log(`\nfailed to download ${invalid_maps.length} maps.\nreason: outdated/invalid map.\n`);
+    }
+}
+
 export const missing_initialize = async () => {
 
     // check if data folder exists
@@ -241,7 +288,7 @@ export const missing_initialize = async () => {
         for (const m of map.maps) {
             if (!hashes.has(m)) {
                 if (m != "4294967295") {
-                    missing_maps.push({ collecton_name: map.name, hash: m });
+                    missing_maps.push({ collection_name: map.name, hash: m });
                 }
                 else {
                     invalid.push({ hash: m });

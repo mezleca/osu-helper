@@ -1,22 +1,19 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import PromptSync from "prompt-sync";
 import fetch from "node-fetch"
 import pkg from 'bluebird';
 
 import { OsuReader } from "../reader/reader.js";
 import { config } from "../other/config.js";
 import { login } from "../thing.js";
-import { check_path } from "../other/utils.js";
+import { check_path, handle_prompt } from "../other/utils.js";
 
 check_path();
 
 const { Promise } = pkg;
 
 const reader = new OsuReader();
-const prompt = PromptSync();
-
 const osu_path = config.get("osu_path");
 const osu_file = fs.readFileSync(path.resolve(osu_path, "osu!.db"));
 const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"));
@@ -130,14 +127,14 @@ const download_maps = async (map, index, length) => {
 
 const download_things = async () => {
     
-    if (prompt("download from a specific collection? (y/n): ") == "y") {
+    if (handle_prompt("download from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = prompt("collection name: ");
+        const name = handle_prompt("collection name: ");
 
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
         if (!missing_maps) {
@@ -159,14 +156,14 @@ const download_things = async () => {
 
 const export_shit = async () => {
 
-    if (prompt("export from a specific collection? (y/n): ") == "y") {
+    if (handle_prompt("export from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = prompt("collection name: ");
+        const name = handle_prompt("collection name: ");
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
 
         if (!missing_maps) {
@@ -217,7 +214,7 @@ export const get_beatmaps_collector = async () => {
     console.clear();
 
     // get collection maps
-    const url = prompt("url: ");
+    const url = handle_prompt("url: ");
 
     // get collection id
     const url_array = url.split("/");
@@ -301,7 +298,7 @@ export const missing_initialize = async () => {
         console.log(`[${i}] - ${options[i].name}`)
     ]
 
-    const option = prompt("select a option: ");
+    const option = handle_prompt("select a option: ");
     if (option == "exit") {
         process.exit(0);
     }

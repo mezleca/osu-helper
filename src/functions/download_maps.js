@@ -1,16 +1,14 @@
 import fs from "fs";
 import path from "path";
-import PromptSync from "prompt-sync";
 import axios from "axios";
 
 const base_url = "https://api.nerinyan.moe/d/";
-const prompt = PromptSync();
 
 export const download_initialize = async () => {
 
     console.log("\nWARN: make sure your input file is a json and have this format\n-> ['https://osu.ppy.sh/beatmapsets/id_here', ...]\n");
 
-    let file_path = prompt("enter the file path: ");
+    let file_path = handle_prompt("enter the file path: ");
     const format = file_path.split(".");
 
     if (format[format.length - 1] != "json") {

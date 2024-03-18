@@ -66,3 +66,13 @@ export const check_path = () => {
     // exit
     process.exit(1);
 };
+
+export const handle_prompt = (question) => {
+
+    const answer = prompt(question);
+    if (answer == "exit") {
+        console.log("ok");
+    }
+
+    return answer;
+};

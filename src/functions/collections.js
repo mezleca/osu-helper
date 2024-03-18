@@ -1,16 +1,14 @@
 import fs from "fs";
 import path from "path";
-import PromptSync from "prompt-sync";
 
 import { OsuReader } from "../reader/reader.js";
 import { config } from "../other/config.js";
 import { search_map_id } from "./missing_maps.js";
-import { check_path } from "../other/utils.js";
+import { check_path, handle_prompt } from "../other/utils.js";
 
 check_path();
 
 const reader = new OsuReader();
-const prompt = PromptSync();
 
 reader.set_directory(path.resolve(config.get("osu_path")));
 
@@ -77,7 +75,7 @@ export const get_invalid_maps = async () => {
 
     console.log(`${mappers} maps has been found...\n`);
 
-    if (prompt("do you want to remove them? (y/n) ") != "y") {
+    if (handle_prompt("do you want to remove them? (y/n) ") != "y") {
         console.log("ok");
         return;
     } 

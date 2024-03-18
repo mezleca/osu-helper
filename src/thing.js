@@ -1,16 +1,13 @@
-import fs from "fs";
-import path from "path";
-import PromptSync from "prompt-sync";
+import { missing_initialize, get_beatmaps_collector } from "./functions/missing_maps.js";
+import { download_initialize } from "./functions/download_maps.js";
+import { get_invalid_maps } from "./functions/collections.js";
+import { check_login, handle_prompt } from "./other/utils.js";
 
 // login :3
 export const login = await check_login();
 
-import { missing_initialize, get_beatmaps_collector } from "./functions/missing_maps.js";
-import { download_initialize } from "./functions/download_maps.js";
-import { get_invalid_maps } from "./functions/collections.js";
-import { check_login  } from "./other/utils.js";
+let current_option = null;
 
-const prompt = PromptSync();
 const menu_options = [
     {
         name: "get missing beatmaps from collections",
@@ -38,10 +35,8 @@ const select_option = () => {
 
     console.log("\n");
 
-    return prompt("select a option: ");
+    return handle_prompt("select a option: ");
 };
-
-let current_option = null;
 
 const main = async () => {
 
@@ -53,10 +48,6 @@ const main = async () => {
         
         if (current_option == null) {
             current_option = select_option();
-        }
-
-        if (current_option == "exit") {
-            break;
         }
 
         current_option = Number(current_option);

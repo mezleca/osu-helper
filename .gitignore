@@ -135,3 +135,6 @@ data/*.json
 
 # package-lock.json
 package-lock.json
+
+# db files
+.db

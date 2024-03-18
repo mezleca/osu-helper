@@ -237,13 +237,42 @@ export const get_beatmaps_collector = async () => {
 
     console.log(`Found ${maps.length} maps\ndownloading...`);
 
-    await Promise.map(maps, download_maps, { concurrency: 3 });
+    // await Promise.map(maps, download_maps, { concurrency: 3 });
 
     console.log(`\ndone!`);
 
     if (invalid_maps.length > 0) {
         console.log(`\nfailed to download ${invalid_maps.length} maps.\nreason: outdated/invalid map.\n`);
     }
+
+    const create_new_collection = handle_prompt("add the collection to osu? (y or n): ");
+    if (create_new_collection != "y") {
+        return;
+    }
+
+    reader.set_type("collection");
+    reader.set_buffer(collection_file);
+
+    if (reader.collections.length == 0) {
+        await reader.get_collections_data();
+    }
+
+    const hashes = data.beatmapsets.flatMap((beatmapset) => {
+        return beatmapset.beatmaps.map((beatmap) => beatmap.checksum);
+    });
+
+    reader.collections.beatmaps.push({
+        name: "!helper - " + data.name,
+        maps: hashes
+    });
+
+    reader.collections.length++;
+
+    const buffer = await reader.write_collections_data();
+
+    fs.writeFileSync("./data/collection.db", Buffer.from(buffer));
+
+    console.log("a new collection file has been created! ( in the data folder )\ncopy the file and paste into the osu! folder ( make sure to backup the old one )")
 }
 
 export const missing_initialize = async () => {
@@ -269,8 +298,10 @@ export const missing_initialize = async () => {
     reader.set_type("collection");
     reader.set_buffer(collection_file);
 
-    await reader.get_collections_data();
-
+    if (reader.collections.length == 0) {
+        await reader.get_collections_data();
+    }
+    
     const hashes = new Set(reader.osu.beatmaps.map(b => b.hash));
     const Maps = reader.collections.beatmaps.map((b) => { return { name: b.name, maps: b.maps } });
 

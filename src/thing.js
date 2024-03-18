@@ -39,8 +39,6 @@ const select_option = () => {
 };
 
 const main = async () => {
-
-    console.clear();
     
     while (true) {
 

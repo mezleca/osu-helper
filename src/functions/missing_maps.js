@@ -65,7 +65,7 @@ const download_map = async (b) => {
     const Path = path.resolve("./data/", `${b}.osz`);
     const buffer = await response.arrayBuffer();
     
-    if (response.status == 404) {
+    if (response.status != 200) {
         throw Error("Map not found");
     }
 
@@ -237,7 +237,7 @@ export const get_beatmaps_collector = async () => {
 
     console.log(`Found ${maps.length} maps\ndownloading...`);
 
-    // await Promise.map(maps, download_maps, { concurrency: 3 });
+    await Promise.map(maps, download_maps, { concurrency: 3 });
 
     console.log(`\ndone!`);
 

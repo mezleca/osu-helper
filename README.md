@@ -5,7 +5,8 @@
 - start the script with npm start.
 
 # todo
-- [ ] rewrite some scripts.
+- [ ] rewrite some functions.
+- [ ] implement osuCollector Downloader (wip)
 - [ ] implement more write functions.
 - [ ] fix bugs/crashes:
     - [ ] fix maps remaining counter not working 

@@ -1,6 +1,6 @@
 # osu-helper-node
 
-## a node js script made to:
+## a node js script created to:
 - download missing maps from collections 
 - download maps from a osuCollector URL
 - remove invalid maps from collections 
@@ -14,7 +14,7 @@ basically a collection helper
 
 # todo
 - [ ] rewrite some scripts.
-- [ ] implement the read/write scripts.
+- [ ] implement more write functions.
 - [ ] fix bugs/crashes:
     - [ ] fix maps remaining counter not working 
     - [x] fix crashes 

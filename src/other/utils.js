@@ -72,6 +72,7 @@ export const handle_prompt = (question) => {
     const answer = prompt(question);
     if (answer == "exit") {
         console.log("ok");
+        process.exit(0);
     }
 
     return answer;

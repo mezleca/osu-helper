@@ -15,6 +15,6 @@ basically a collection helper
 - [ ] rewrite some scripts.
 - [ ] implement the read/write scripts.
 - [ ] fix bugs/crashes:
-    - [ ] fix maps remaning counter not working 
+    - [ ] fix maps remaining counter not working 
     - [x] fix crashes 
 - [x] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc.)

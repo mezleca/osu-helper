@@ -14,5 +14,7 @@ basically a collection helper
 # todo
 - [ ] rewrite some scripts.
 - [ ] implement the read/write scripts.
-- [x] fix bugs/crashes.
+- [ ] fix bugs/crashes:
+    - [ ] fix maps remaning counter not working 
+    - [x] fix crashes 
 - [x] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc.)

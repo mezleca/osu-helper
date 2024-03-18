@@ -6,19 +6,16 @@ import fetch from "node-fetch"
 import pkg from 'bluebird';
 
 import { OsuReader } from "../reader/reader.js";
-import { config } from "../config.js";
+import { config } from "../other/config.js";
 import { login } from "../thing.js";
+import { check_path } from "../other/utils.js";
+
+check_path();
 
 const { Promise } = pkg;
 
 const reader = new OsuReader();
 const prompt = PromptSync();
-
-if (!fs.existsSync(config.get("osu_path")) || !fs.existsSync(config.get("osu_songs_folder"))) {
-    console.clear();
-    console.log("osu path is invalid!\nplease update your config.js file with the osu / osu songs correct path");
-    process.exit(1);
-}
 
 const osu_path = config.get("osu_path");
 const osu_file = fs.readFileSync(path.resolve(osu_path, "osu!.db"));

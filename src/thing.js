@@ -8,7 +8,7 @@ export const login = await check_login();
 import { missing_initialize, get_beatmaps_collector } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";
-import { check_login  } from "./utils.js";
+import { check_login  } from "./other/utils.js";
 
 const prompt = PromptSync();
 const menu_options = [
@@ -68,12 +68,8 @@ const main = async () => {
         }
 
         await menu_options[current_option].func();
-        current_option = null;
 
-        // timeout
-        await new Promise((re, rej) => {
-            const interval = setInterval(() => { clearInterval(interval); re() }, 1000);
-        });
+        current_option = null;
     }
 };
 

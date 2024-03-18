@@ -66,5 +66,5 @@ export const download_initialize = async () => {
         });
     }
 
-    console.log("\ndone!\n");
+    console.log("\ndone!");
 };

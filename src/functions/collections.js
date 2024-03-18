@@ -3,14 +3,11 @@ import path from "path";
 import PromptSync from "prompt-sync";
 
 import { OsuReader } from "../reader/reader.js";
-import { config } from "../config.js";
+import { config } from "../other/config.js";
 import { search_map_id } from "./missing_maps.js";
+import { check_path } from "../other/utils.js";
 
-if (!fs.existsSync(config.get("osu_path")) || !fs.existsSync(config.get("osu_songs_folder"))) {
-    console.clear();
-    console.log("osu path is invalid!\nplease update your config.js file with the osu / osu songs correct path");
-    process.exit(1);
-}
+check_path();
 
 const reader = new OsuReader();
 const prompt = PromptSync();

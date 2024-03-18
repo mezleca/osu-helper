@@ -7,7 +7,7 @@
 # todo
 - [ ] rewrite some functions.
 - [ ] implement osuCollector Downloader (wip)
-- [ ] implement more write functions.
+- [ ] multiple api download.
 - [ ] fix bugs/crashes:
     - [ ] fix maps remaining counter not working 
     - [x] fix crashes 

@@ -44,7 +44,7 @@ export const check_config = () => {
         }
     
         // yep this is still pretty bad
-        const text = `import { check_config } from "./utils.js";\nexport const config = new Map();\n\n// Update the config files HEREE!!!!!!!!!!!!!!!:\n${Array.from(config).map(([k, v]) => `config.set("${k}", "${v}");\n`).join('\n')}check_config();`
+        const text = `import { check_config } from "./utils.js";\nexport const config = new Map();\n\n// Update the config files HEREE!!!!!!!!!!!!!!!:\n${Array.from(config).map(([k, v]) => `config.set("${k}", "${v}");`).join('\n')}\ncheck_config();`
     
         // update the config.js file
         fs.writeFileSync("./src/config.js", text);

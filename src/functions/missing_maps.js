@@ -290,18 +290,24 @@ export const get_beatmaps_collector = async () => {
         return !beatmapset.beatmaps.some((beatmap) => maps_hashes.has(beatmap.checksum));
     });
 
-    console.log(`Found ${filtered_maps.length} missing maps\ndownloading...`);
+    console.log(`Found ${filtered_maps.length} missing maps\n`);
 
-    await Promise.map(filtered_maps, download_maps, { concurrency: 3 });
+    const confirmation = handle_prompt("download? (y or n): ");
+    if (confirmation.toLowerCase() == "y") {
 
-    // clean progress bar line
-    process.stdout.clearLine(); 
-    process.stdout.cursorTo(0); 
+        console.log("Downloading...\n");
 
-    console.log(`\ndone!`);
+        await Promise.map(filtered_maps, download_maps, { concurrency: 3 });
+    
+        // clean progress bar line
+        process.stdout.clearLine(); 
+        process.stdout.cursorTo(0); 
+    
+        console.log(`\ndone!`);
 
-    if (invalid_maps.length > 0) {
-        console.log(`\nfailed to download ${invalid_maps.length} maps.\nreason: outdated/invalid map.\n`);
+        if (invalid_maps.length > 0) {
+            console.log(`\nfailed to download ${invalid_maps.length} maps.\nreason: outdated/invalid map.\n`);
+        }
     }
 
     const create_new_collection = handle_prompt("add the collection to osu? (y or n): ");

@@ -6,9 +6,9 @@
 
 # todo
 - [ ] rewrite some functions.
-- [ ] implement osuCollector Downloader (wip)
+- [x] implement osuCollector Downloader.
 - [x] multiple api download.
 - [ ] fix bugs/crashes:
     - [ ] fix maps remaining counter not working 
     - [x] fix crashes 
-- [x] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc.)
+- [x] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc).

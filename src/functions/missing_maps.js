@@ -265,12 +265,38 @@ export const get_beatmaps_collector = async () => {
 
     const data = await collection.data;
 
-    // create a new array like missing_maps
-    const maps = data.beatmapsets.map((b) => { return { id: b.id } });
+    const hashes = data.beatmapsets.flatMap((beatmapset) => {
+        return beatmapset.beatmaps.map((beatmap) => beatmap.checksum);
+    });
 
-    console.log(`Found ${maps.length} maps\ndownloading...`);
+    reader.set_type("osu");
+    reader.set_buffer(osu_file);
 
-    await Promise.map(maps, download_maps, { concurrency: 3 });
+    if (!reader.osu.beatmaps) {
+
+        console.log("reading osu.db file...\n");
+
+        await reader.get_osu_data();
+        
+        for (let i = 0; i < reader.osu.beatmaps; i++) {
+            reader.osu.beatmaps[i].sr = [];
+            reader.osu.beatmaps[i].timing_points = [];
+        }
+    }
+
+    // get maps that are currently missing
+    const maps_hashes = new Set(reader.osu.beatmaps.map((beatmap) => beatmap.md5));
+    const filtered_maps = data.beatmapsets.filter((beatmapset) => {
+        return !beatmapset.beatmaps.some((beatmap) => maps_hashes.has(beatmap.checksum));
+    });
+
+    console.log(`Found ${filtered_maps.length} missing maps\ndownloading...`);
+
+    await Promise.map(filtered_maps, download_maps, { concurrency: 3 });
+
+    // clean progress bar line
+    process.stdout.clearLine(); 
+    process.stdout.cursorTo(0); 
 
     console.log(`\ndone!`);
 
@@ -289,10 +315,6 @@ export const get_beatmaps_collector = async () => {
     if (reader.collections.length == 0) {
         await reader.get_collections_data();
     }
-
-    const hashes = data.beatmapsets.flatMap((beatmapset) => {
-        return beatmapset.beatmaps.map((beatmap) => beatmap.checksum);
-    });
 
     reader.collections.beatmaps.push({
         name: "!helper - " + data.name,

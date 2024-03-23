@@ -5,10 +5,11 @@
 - start the script with npm start.
 
 # todo
+- [ ] implement a gui ( maybe electron )
 - [ ] rewrite some functions.
 - [x] implement osuCollector Downloader.
 - [x] multiple api download.
 - [ ] fix bugs/crashes:
     - [ ] fix maps remaining counter not working 
-    - [x] fix crashes 
+    - [ ] fix all crashes 
 - [x] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc).

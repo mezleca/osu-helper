@@ -1,4 +1,4 @@
-import { OsuReader } from "./reader/reader.js";
+import { OsuReader } from "../reader/reader.js";
 import fs from "fs";
 
 // test

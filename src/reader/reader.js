@@ -50,6 +50,12 @@ export class OsuReader {
         return value;
     }
 
+    readInt(){
+        const value = this.buffer.readUInt32LE(this.offset);
+        this.offset += 4;     
+        return value;
+    }
+
     #readLong(){
         const value = Number(this.buffer.readBigInt64LE(this.offset));
         this.offset += 8;       
@@ -87,7 +93,7 @@ export class OsuReader {
         return value;
     }
 
-    #readString(){
+    #readString(){     
         
         const is_present = this.#readByte() == 0x00 ? false : true;
         if (!is_present) {
@@ -219,7 +225,7 @@ export class OsuReader {
 
     get_osu_data = (limit) => {
 
-        return new Promise(async (r, rj) => {
+        return new Promise(async (resolve) => {
 
             const beatmaps = [];
 
@@ -242,30 +248,30 @@ export class OsuReader {
 
             for (let i = 0; i < beatmaps_count; i++) {
 
-                const data = {
-                    entry: version < 20191106 ? this.#readInt() : 0,
-                    artist_name: this.#readString(),
-                    artist_name_unicode: this.#readString(),
-                    song_title: this.#readString(),
-                    song_title_unicode: this.#readString(),
-                    creator_name: this.#readString(),
-                    difficulty: this.#readString(),
-                    audio_file_name: this.#readString(),
-                    md5: this.#readString(),
-                    file: this.#readString(),
-                    status: this.#readByte(),
-                    hitcircle: this.#readShort(),
-                    sliders: this.#readShort(),
-                    spinners: this.#readShort(),
-                    last_modification: this.#readLong(),
-                    approach_rate: version < 20140609 ? this.#readByte() : this.#readSingle(),
-                    circle_size: version < 20140609 ? this.#readByte() : this.#readSingle(),
-                    hp: version < 20140609 ? this.#readByte() : this.#readSingle(),
-                    od: version < 20140609 ? this.#readByte() : this.#readSingle(),
-                    slider_velocity: this.#readDouble(),
-                    sr: [],
-                    timing_points: [],
-                };
+                const data = {};
+
+                data.entry = version < 20191106 ? this.#readInt() : 0;
+                data.artist_name = this.#readString();
+                data.artist_name_unicode = this.#readString();
+                data.song_title = this.#readString();
+                data.song_title_unicode = this.#readString();
+                data.creator_name = this.#readString();
+                data.difficulty = this.#readString();
+                data.audio_file_name = this.#readString();
+                data.md5 = this.#readString();
+                data.file = this.#readString();
+                data.status = this.#readByte();
+                data.hitcircle = this.#readShort();
+                data.sliders = this.#readShort();
+                data.spinners = this.#readShort();
+                data.last_modification = this.#readLong();
+                data.approach_rate = version < 20140609 ? this.#readByte() : this.#readSingle();
+                data.circle_size = version < 20140609 ? this.#readByte() : this.#readSingle();
+                data.hp = version < 20140609 ? this.#readByte() : this.#readSingle();
+                data.od = version < 20140609 ? this.#readByte() : this.#readSingle();
+                data.slider_velocity = this.#readDouble();
+                data.sr = [];
+                data.timing_points = [];
 
                 for (let i = 0; i < 4; i++) {
 
@@ -273,6 +279,7 @@ export class OsuReader {
                     const diffs = [];
 
                     for (let i = 0; i < length; i++) {
+
                         this.#readByte();
                         const mod = this.#readInt();
                         this.#readByte();
@@ -340,11 +347,11 @@ export class OsuReader {
                 data.last_modified = this.#readInt();	
                 data.mania_scroll_speed = this.#readByte();
 
-                beatmaps.push(data);
-            }
+                if (limit && beatmaps.length + 1 > limit) {
+                    continue;
+                }               
 
-            if (limit) {
-                beatmaps.slice(0, limit);
+                beatmaps.push(data);
             }
 
             const permissions_id = this.#readInt();
@@ -377,13 +384,13 @@ export class OsuReader {
             this.offset = 0;
             this.osu = { version, folders, account_unlocked, player_name, beatmaps_count, beatmaps, permissions_id, permission };
 
-            r(this.osu);
+            resolve(this.osu);
         });
     };
 
     get_collections_data = (limit) => {
 
-        return new Promise(async (r, rj) => {
+        return new Promise(async (resolve) => {
 
             const beatmaps = [];
 
@@ -397,23 +404,24 @@ export class OsuReader {
                 
                 const md5 = await this.#getMD5(bm_count);
 
+                if (limit && beatmaps.length + 1 > limit) {
+                    continue;
+                }
+                
                 beatmaps.push({
                     name: name,
                     maps: [...md5],
                 }); 
             }
 
-            if (limit) {
-                beatmaps.slice(0, limit);
-            }
-
             this.offset = 0;
             this.collections = { version, length: count, beatmaps };
 
-            r(this.collections);
+            resolve(this.collections);
         });
     };
 
+    /* kinda useless but you can use on a separate script */
     initialize = async () => {
 
         if (this.type != "" && this.type != "osu" && this.type != "collection") {

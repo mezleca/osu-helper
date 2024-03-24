@@ -1,6 +1,6 @@
 {
     "name": "osu-helper",
-    "version": "0.25",
+    "version": "0.4",
     "description": "osu helper",
     "scripts": {
         "start": "node src/thing.js"

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import fetch from "node-fetch"
-import pkg from 'bluebird';
+import pMap from 'p-map';
 
 import { OsuReader } from "../reader/reader.js";
 import { config } from "../other/config.js";
@@ -10,8 +10,6 @@ import { login } from "../thing.js";
 import { check_path, handle_prompt } from "../other/utils.js";
 
 check_path();
-
-const { Promise } = pkg;
 
 const reader = new OsuReader();
 const osu_path = config.get("osu_path");
@@ -21,6 +19,7 @@ const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"))
 let missing_maps = [];
 let invalid = [];
 let current_index = 0;
+let h_index = 0;
 
 const invalid_maps = [];
 
@@ -74,30 +73,35 @@ export const search_map_id = async (hash) => {
 
 const download_map = async (b) => {
 
-    const Path = path.resolve("./data/", `${b}.osz`);
+    try {
 
-    for (let i = 0; i < mirrors.length; i++) {
+        const Path = path.resolve("./data/", `${b}.osz`);
 
-        const api = mirrors[i];
-        const params = {};
+        for (let i = 0; i < mirrors.length; i++) {
 
-        if (api.name == "nerinyan") {
-            params.NoHitsound = "true";
-            params.NoStoryBoard = true;
+            const api = mirrors[i];
+            const params = {};
+
+            if (api.name == "nerinyan") {
+                params.NoHitsound = "true";
+                params.NoStoryBoard = true;
+            }
+
+            const response = await fetch(`${api.url}${b}`, { method: "GET", params });
+            const buffer = await response.arrayBuffer();
+
+            if (response.status != 200) {
+                continue;
+            }
+
+            fs.writeFileSync(Path, Buffer.from(buffer));
+
+            break;
         }
-
-        const response = await fetch(`${api.url}${b}`, { method: "GET", params });
-        const buffer = await response.arrayBuffer();
-
-        if (response.status != 200) {
-            continue;
-        }
-
-        fs.writeFileSync(Path, Buffer.from(buffer));
-
-        break;
     }
-
+    catch(err) {
+        // ...
+    }
 };
 
 const progress_bar = (start_, end) => {
@@ -105,7 +109,7 @@ const progress_bar = (start_, end) => {
     let sp = " "; 
     let bar = "█"; 
 
-    const start = current_index;
+    const start = h_index;
 
     let perc = Math.floor(start / end * 100); 
     let bars = Math.floor(perc / 10); 
@@ -122,16 +126,16 @@ const progress_bar = (start_, end) => {
     process.stdout.clearLine(); 
     process.stdout.cursorTo(0); 
 
-    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat(spaces)}] ${end - start} maps remaining`);
+    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat(spaces)}] ${end - h_index} maps remaining`);
 }
 
-const download_maps = async (map, index, length) => {
+const download_maps = async (map, index) => {
 
     const hash = map.hash;
     
     try {
 
-        progress_bar(index, length);
+        progress_bar(current_index, missing_maps.length - current_index);
 
         if (!map.id) {
             
@@ -146,16 +150,21 @@ const download_maps = async (map, index, length) => {
         }
 
         await download_map(map.id);
-           
-    } catch(error) {;
-        invalid_maps.push({ hash: map.hash });
-        console.log(error);
-        if (error.data) {
-            console.log(error.data.message);
-        }
-    }
 
-    current_index++;
+        current_index++;
+           
+    } catch(error) {
+
+        invalid_maps.push({ hash: map.hash });
+
+        if (error.data) {
+            return console.log(error.data.message);
+        }
+
+        console.log(error);
+
+        current_index++;
+    }
 };
 
 const download_things = async () => {
@@ -178,7 +187,7 @@ const download_things = async () => {
         console.log("Found:", missing_maps.length, "maps");
     }
 
-    await Promise.map(missing_maps, download_maps, { concurrency: 3 });
+    await pMap(missing_maps, download_maps, { concurrency: 3 }); 
 
     console.log(`\ndone!`);
 
@@ -297,7 +306,9 @@ export const get_beatmaps_collector = async () => {
 
         console.log("Downloading...\n");
 
-        await Promise.map(filtered_maps, download_maps, { concurrency: 3 });
+        missing_maps = filtered_maps;
+
+        await pMap(missing_maps, download_maps, { concurrency: 3 }); 
     
         // clean progress bar line
         process.stdout.clearLine(); 

@@ -9,7 +9,7 @@
 - [ ] rewrite some functions.
 - [x] implement osuCollector Downloader.
 - [x] multiple api download.
-- [ ] fix bugs/crashes:
-    - [ ] fix maps remaining counter not working 
-    - [ ] fix all crashes 
+- [x] fix bugs/crashes:
+    - [x] fix maps remaining counter not working 
+    - [x] fix all crashes 
 - [x] implement a function that removes invalid beatmaps from collections. (outdated, deleted, etc).

@@ -5,9 +5,9 @@ import fetch from "node-fetch"
 import pMap from 'p-map';
 
 import { OsuReader } from "../reader/reader.js";
-import { config } from "../other/config.js";
-import { login } from "../thing.js";
-import { check_path, handle_prompt } from "../other/utils.js";
+import { config } from "../../other/config.js";
+import { login } from "../main.js";
+import { check_path, handle_prompt } from "../../other/utils.js";
 
 check_path();
 
@@ -19,7 +19,6 @@ const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"))
 let missing_maps = [];
 let invalid = [];
 let current_index = 0;
-let h_index = 0;
 
 const invalid_maps = [];
 
@@ -104,29 +103,22 @@ const download_map = async (b) => {
     }
 };
 
-const progress_bar = (start_, end) => {
+Number.prototype.clamp = function(min, max) {
+    return Math.min(Math.max(this, min), max);
+};
+
+const progress_bar = (start, end) => {
 
     let sp = " "; 
     let bar = "█"; 
 
-    const start = h_index;
-
-    let perc = Math.floor(start / end * 100); 
-    let bars = Math.floor(perc / 10); 
-    let spaces = 10 - bars;
-
-    if (bars < 0) {
-        bars = 0;
-    }
-
-    if (spaces < 0) {
-        spaces = 0;
-    }
+    let perc = Math.floor(start / end * 100).clamp(0, 100);
+    let bars = Math.floor(perc / 10).clamp(0, 10); 
 
     process.stdout.clearLine(); 
     process.stdout.cursorTo(0); 
 
-    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat(spaces)}] ${end - h_index} maps remaining`);
+    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat((10 - bars).clamp(0, 10))}] ${end} maps remaining`);
 }
 
 const download_maps = async (map, index) => {
@@ -135,7 +127,7 @@ const download_maps = async (map, index) => {
     
     try {
 
-        progress_bar(current_index, missing_maps.length - current_index);
+        progress_bar(current_index, missing_maps.length);
 
         if (!map.id) {
             

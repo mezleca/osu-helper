@@ -4,9 +4,7 @@
 - go to the config.js file and enter the requested information.
 - start the script with npm start.
 
-# todo
-- [ ] implement a gui ( maybe electron )
-- [ ] rewrite some functions.
+# todo ( finished )
 - [x] implement osuCollector Downloader.
 - [x] multiple api download.
 - [x] fix bugs/crashes:

@@ -3,7 +3,7 @@
     "version": "0.4",
     "description": "osu helper",
     "scripts": {
-        "start": "node src/thing.js"
+        "start": "node src/core/main.js"
     },
     "type": "module",
     "dependencies": {

@@ -2,9 +2,9 @@ import fs from "fs";
 import path from "path";
 
 import { OsuReader } from "../reader/reader.js";
-import { config } from "../other/config.js";
+import { config } from "../../other/config.js";
 import { search_map_id } from "./missing_maps.js";
-import { check_path, handle_prompt } from "../other/utils.js";
+import { check_path, handle_prompt } from "../../other/utils.js";
 
 check_path();
 

@@ -1,7 +1,7 @@
 import { missing_initialize, get_beatmaps_collector } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";
-import { check_login, handle_prompt } from "./other/utils.js";
+import { check_login, handle_prompt } from "../other/utils.js";
 
 // login :3
 export const login = await check_login();
@@ -42,7 +42,7 @@ const main = async () => {
     
     while (true) {
 
-        console.log("osu-thing 0.4 | type exit to... exit?\n");
+        console.log("osu-helper 0.5 | type exit to... exit?\n");
         
         if (current_option == null) {
             current_option = select_option();

@@ -138,3 +138,7 @@ package-lock.json
 
 # db files
 .db
+
+# some other folders that i create sometimes to test/ etc
+.bench/
+.test/

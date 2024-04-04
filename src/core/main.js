@@ -53,7 +53,7 @@ const main = async () => {
         if (current_option > menu_options.length || isNaN(current_option)) {
             console.log("invalid option");
             current_option = null;
-            return;
+            continue;
         }
 
         await menu_options[current_option].func();

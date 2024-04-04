@@ -1,22 +1,18 @@
-import PromptSync from "prompt-sync";
-import fs from "fs";
 import path from "path";
 
 import { osu_db, collections_db } from "./definitions.js";
-
-const prompt = PromptSync();
-
 export class OsuReader {
 
-    type = "";
-    offset = 0;
+    /** @type {collections_db} */
+    collections; 
+    /** @type {osu_db} */
+    osu;
 
     constructor(buffer, type) {
-        type = type || "";
-        buffer = buffer || null;
-        /** @type {osu_db} */
+        this.type = type || "";
+        this.buffer = buffer || null;
+        this.offset = 0;
         this.osu = [];
-        /** @type {collections_db} */
         this.collections = [];
     }
 
@@ -32,96 +28,76 @@ export class OsuReader {
         this.directory = path.resolve(directory);
     }
 
-    #readByte(){
+    #byte(){
         const value = this.buffer.readUint8(this.offset);
         this.offset += 1;
         return value;
     }
 
-    #readShort(){
+    #short(){
         const value = this.buffer.readUint16LE(this.offset);
         this.offset += 2; 
         return value;
     }
 
-    #readInt(){
+    #int(){
         const value = this.buffer.readUInt32LE(this.offset);
         this.offset += 4;     
         return value;
     }
 
-    readInt(){
-        const value = this.buffer.readUInt32LE(this.offset);
-        this.offset += 4;     
+    #long(){
+        const value = this.buffer.readBigInt64LE(this.offset);
+        this.offset += 8;     
         return value;
     }
 
-    #readLong(){
-        const value = Number(this.buffer.readBigInt64LE(this.offset));
-        this.offset += 8;       
-        return value;
-    }
-
-    #readULEB128() {
+    #uleb() {
         let result = 0;
         let shift = 0;
     
         do {
-            const byte = this.buffer.readUInt8(this.offset);
+            var byte = this.#byte();
             result |= (byte & 0x7F) << shift;
             shift += 7;
-            this.offset += 1;
-        } while (this.buffer.readUInt8(this.offset - 1) & 0x80);
+        } while (byte & 0x80);
           
         return { value: result, bytesRead: this.offset };
     }
 
-    #readSingle(){
+    #single(){
         const value = this.buffer.readFloatLE(this.offset);
         this.offset += 4;
         return value;
     }
 
-    #readDouble(){
+    #double(){
         const value = this.buffer.readDoubleLE(this.offset);
         this.offset += 8; 
         return value;
     }
 
-    #readBool(){
-        const value = this.#readByte() == 0x00 ? false : true;
+    #bool(){
+        const value = this.#byte() == 0x00 ? false : true;
         return value;
     }
 
-    #readString(){     
+    #string(){     
         
-        const is_present = this.#readByte() == 0x00 ? false : true;
+        const is_present = this.#bool();
         if (!is_present) {
             return null;
         }
     
-        const length = this.#readULEB128();
+        const length = this.#uleb();
         const value =  this.buffer.toString('utf-8', this.offset, this.offset + length.value);
         this.offset += length.value;
     
         return value;
     }
 
-    #Skip(b) {
+    #skip(b) {
         this.offset += b;     
-    }
-
-    #getMD5(count){
-        return new Promise(async (r, rj) => {
-
-            const md5 = [];
-            for (let i = 0; i < count; i++) {
-                const map = this.#readString();
-                md5.push(map);
-            }
-
-            r(md5);
-        });
     }
 
     #writeByte(value){
@@ -174,17 +150,17 @@ export class OsuReader {
     }
 
     #writeULEB128(value) {
-        const buffer = Buffer.alloc(5); // max 5 bytes for 32-bit number
+        const buffer = Buffer.alloc(5);
         let offset = 0;
         do {
             let byte = value & 0x7F;
             value >>>= 7;
-            if (value !== 0) { /* more bytes to come */
+            if (value !== 0) {
                 byte |= 0x80;
             }
             buffer.writeUInt8(byte, offset++);
         } while (value !== 0);
-        return buffer.slice(0, offset); // remove unused bytes
+        return buffer.slice(0, offset);
     }
 
     write_collections_data = () => {
@@ -196,7 +172,6 @@ export class OsuReader {
                 return;
             }
 
-            // reset
             this.offset = 0;
             const buffer_array = [];
             const data = this.collections;
@@ -229,16 +204,14 @@ export class OsuReader {
 
             const beatmaps = [];
 
-            const version = this.#readInt();
-            const folders = this.#readInt();
-            const account_unlocked = this.#readBool();
-
+            const version = this.#int();
+            const folders = this.#int();
+            const account_unlocked = this.#bool();
             // skip date_time cuz why not
-            this.#Skip(8);
+            this.#skip(8);
 
-            const player_name = this.#readString();
-            const beatmaps_count = this.#readInt();
-
+            const player_name = this.#string();
+            const beatmaps_count = this.#int();
             const modes = {
                 "1": "osu!",
                 "2": "taiko",
@@ -250,42 +223,42 @@ export class OsuReader {
 
                 const data = {};
 
-                data.entry = version < 20191106 ? this.#readInt() : 0;
-                data.artist_name = this.#readString();
-                data.artist_name_unicode = this.#readString();
-                data.song_title = this.#readString();
-                data.song_title_unicode = this.#readString();
-                data.creator_name = this.#readString();
-                data.difficulty = this.#readString();
-                data.audio_file_name = this.#readString();
-                data.md5 = this.#readString();
-                data.file = this.#readString();
-                data.status = this.#readByte();
-                data.hitcircle = this.#readShort();
-                data.sliders = this.#readShort();
-                data.spinners = this.#readShort();
-                data.last_modification = this.#readLong();
-                data.approach_rate = version < 20140609 ? this.#readByte() : this.#readSingle();
-                data.circle_size = version < 20140609 ? this.#readByte() : this.#readSingle();
-                data.hp = version < 20140609 ? this.#readByte() : this.#readSingle();
-                data.od = version < 20140609 ? this.#readByte() : this.#readSingle();
-                data.slider_velocity = this.#readDouble();
+                data.entry = version < 20191106 ? this.#int() : 0;
+                data.artist_name = this.#string();
+                data.artist_name_unicode = this.#string();
+                data.song_title = this.#string();
+                data.song_title_unicode = this.#string();
+                data.creator_name = this.#string();
+                data.difficulty = this.#string();
+                data.audio_file_name = this.#string();
+                data.md5 = this.#string();
+                data.file = this.#string();
+                data.status = this.#byte();
+                data.hitcircle = this.#short();
+                data.sliders = this.#short();
+                data.spinners = this.#short();
+                data.last_modification = this.#long(true);
+                data.approach_rate = version < 20140609 ? this.#byte() : this.#single();
+                data.circle_size = version < 20140609 ? this.#byte() : this.#single();
+                data.hp = version < 20140609 ? this.#byte() : this.#single();
+                data.od = version < 20140609 ? this.#byte() : this.#single();
+                data.slider_velocity = this.#double();
                 data.sr = [];
                 data.timing_points = [];
-
+     
                 for (let i = 0; i < 4; i++) {
 
-                    const length = this.#readInt();
+                    const length = this.#int();
                     const diffs = [];
 
                     for (let i = 0; i < length; i++) {
 
-                        this.#readByte();
-                        const mod = this.#readInt();
-                        this.#readByte();
-                        const diff = this.#readDouble();
+                        this.#byte();
+                        const mod = this.#int();
+                        this.#byte();
+                        const diff = this.#double();
                         
-                        diffs.push({ mod, diff });
+                        diffs.push([ mod, diff]);
                     }
 
                     data.sr.push({
@@ -293,18 +266,18 @@ export class OsuReader {
                         sr: diffs,
                     });
                 }
-
-                data.drain_time = this.#readInt();
-                data.total_time = this.#readInt();
-                data.audio_preview = this.#readInt();
-
-                const timing_points = this.#readInt();
+                
+                data.drain_time = this.#int();
+                data.total_time = this.#int();
+                data.audio_preview = this.#int();
+                
+                const timing_points = this.#int();
                 
                 for (let i = 0; i < timing_points; i++) {
 
-                    const bpm = this.#readDouble();
-                    const offset = this.#readDouble();
-                    const idk_bool = this.#readBool();
+                    const bpm = this.#double();
+                    const offset = this.#double();
+                    const idk_bool = this.#bool();  
 
                     if (data.timing_points.length < 6) {
                         if (data.timing_points.length == 6) {
@@ -313,48 +286,49 @@ export class OsuReader {
                             data.timing_points.push({ bpm, offset, idk_bool });
                         }
                     }
-                } 
-
-                data.difficulty_id = this.#readInt();
-                data.beatmap_id = this.#readInt();
-                data.thread_id = this.#readInt();
-                data.grade_standard = this.#readByte();
-                data.grade_taiko = this.#readByte();
-                data.grade_ctb = this.#readByte();
-                data.grade_mania = this.#readByte();
-                data.local_offset = this.#readShort();
-                data.stack_leniency = this.#readSingle();
-                data.mode = this.#readByte();
-                data.source = this.#readString();
-                data.tags = this.#readString();
-                data.online_offset = this.#readShort();
-                data.font = this.#readString();
-                data.unplayed = this.#readBool();
-                data.last_played = this.#readLong();
-                data.is_osz2 = this.#readBool();
-                data.folder_name = this.#readString();
-                data.last_checked = this.#readLong();
-                data.ignore_sounds = this.#readBool();
-                data.ignore_skin = this.#readBool();
-                data.disable_storyboard = this.#readBool();
-                data.disable_video = this.#readBool();
-                data.visual_override = this.#readBool();
-
-                if (version < 20140609) {
-                    data.unknown = this.#readShort();
                 }
 
-                data.last_modified = this.#readInt();	
-                data.mania_scroll_speed = this.#readByte();
+                data.difficulty_id = this.#int();
+                data.beatmap_id = this.#int();
+                data.thread_id = this.#int();
+                data.grade_standard = this.#byte();
+                data.grade_taiko = this.#byte();
+                data.grade_ctb = this.#byte();
+                data.grade_mania = this.#byte();
+                data.local_offset = this.#short();
+                data.stack_leniency = this.#single();
+                data.mode = this.#byte();
+                data.source = this.#string();
+                data.tags = this.#string();
+                data.online_offset = this.#short();
+                data.font = this.#string();
+                data.unplayed = this.#bool();
+                data.last_played = this.#long();
+                data.is_osz2 = this.#bool();
+                data.folder_name = this.#string();
+                data.last_checked = this.#long();
+                data.ignore_sounds = this.#bool();
+                data.ignore_skin = this.#bool();
+                data.disable_storyboard = this.#bool();
+                data.disable_video = this.#bool();
+                data.visual_override = this.#bool();
+
+                if (version < 20140609) {
+                    data.unknown = this.#short();
+                }
+
+                data.last_modified = this.#int();	
+                data.mania_scroll_speed = this.#byte();
+
+                beatmaps.push(data);
 
                 if (limit && beatmaps.length + 1 > limit) {
                     continue;
-                }               
-
-                beatmaps.push(data);
+                }                     
+                
             }
-
-            const permissions_id = this.#readInt();
+       
+            const permissions_id = this.#int();
             let permission = "";
 
             switch (permissions_id) {
@@ -382,9 +356,7 @@ export class OsuReader {
             }
 
             this.offset = 0;
-            this.osu = { version, folders, account_unlocked, player_name, beatmaps_count, beatmaps, permissions_id, permission };
-
-            resolve(this.osu);
+            this.osu = { version, folders, account_unlocked, player_name, beatmaps_count, beatmaps, permissions_id, permission };        
         });
     };
 
@@ -394,15 +366,20 @@ export class OsuReader {
 
             const beatmaps = [];
 
-            const version = this.#readInt();
-            const count = this.#readInt();
+            const version = this.#int();
+            const count = this.#int();
 
             for (let i = 0; i < count; i++) {
 
-                const name = this.#readString();
-                const bm_count = this.#readInt();
+                const name = this.#string();
+                const bm_count = this.#int();
                 
-                const md5 = await this.#getMD5(bm_count);
+                const md5 = [];
+
+                for (let i = 0; i < count; i++) {
+                    const map = this.#string();
+                    md5.push(map);
+                }
 
                 if (limit && beatmaps.length + 1 > limit) {
                     continue;
@@ -419,48 +396,5 @@ export class OsuReader {
 
             resolve(this.collections);
         });
-    };
-
-    /* kinda useless but you can use on a separate script */
-    initialize = async () => {
-
-        if (this.type != "" && this.type != "osu" && this.type != "collection") {
-            return console.log("Invalid type");
-        }
-
-        if (!this.buffer && !this.type) {
-
-            const type = Number(prompt("osu! or collection? ( 1 - 2 ): "));
-            if (!type || isNaN(type)) {
-                return console.log("Invalid type");
-            }
-
-            this.type = type == 1 ? "osu" : "collection";
-
-            if (!this.buffer) {
-                
-                const file_path = prompt("Osu path: ");
-                if (!file_path) {
-                    return console.log("Invalid path");
-                }
-
-                const file = fs.readFileSync(path.join(file_path, this.type == "osu" ? "osu!.db" : "collection.db"));
-                this.buffer = Buffer.from(file);
-            }
-        }
-
-        const limit = Number(prompt("Beatmap Limit: ")) || null;
-        
-        if (this.type == "osu") { 
-            this.osu = await this.get_osu_data(limit);
-            return;
-        }
-        
-        if (this.type == "collection") {
-            this.collections = await this.get_collections_data(limit);
-            return;
-        }
-
-        return { error: "Something went wrong" };
     };
 };

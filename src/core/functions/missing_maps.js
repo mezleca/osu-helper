@@ -18,7 +18,6 @@ const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"))
 
 let missing_maps = [];
 let invalid = [];
-let current_index = 0;
 
 const invalid_maps = [];
 
@@ -118,7 +117,7 @@ const progress_bar = (start, end) => {
     process.stdout.clearLine(); 
     process.stdout.cursorTo(0); 
 
-    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat((10 - bars).clamp(0, 10))}] ${end} maps remaining`);
+    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat((10 - bars).clamp(0, 10))}] ${end - start} maps remaining`);
 }
 
 const download_maps = async (map, index) => {
@@ -127,14 +126,13 @@ const download_maps = async (map, index) => {
     
     try {
 
-        progress_bar(current_index, missing_maps.length);
+        progress_bar(index, missing_maps.length);
 
         if (!map.id) {
             
             const id = (await search_map_id(hash)).beatmapset_id;
             if (!id) {
                 invalid_maps.push({ hash: map.hash });
-                current_index++;
                 return;
             }
 
@@ -142,8 +140,6 @@ const download_maps = async (map, index) => {
         }
 
         await download_map(map.id);
-
-        current_index++;
            
     } catch(error) {
 
@@ -154,8 +150,6 @@ const download_maps = async (map, index) => {
         }
 
         console.log(error);
-
-        current_index++;
     }
 };
 
@@ -271,7 +265,7 @@ export const get_beatmaps_collector = async () => {
     });
 
     reader.set_type("osu");
-    reader.set_buffer(osu_file);
+    reader.set_buffer(osu_file, true);
 
     if (!reader.osu.beatmaps) {
 
@@ -319,7 +313,7 @@ export const get_beatmaps_collector = async () => {
     }
 
     reader.set_type("collection");
-    reader.set_buffer(collection_file);
+    reader.set_buffer(collection_file, true);
 
     if (reader.collections.length == 0) {
         await reader.get_collections_data();
@@ -349,7 +343,7 @@ export const missing_initialize = async () => {
     // initialize for reading osu!.db
     reader.set_type("osu");
     reader.set_directory(osu_path);
-    reader.set_buffer(osu_file);
+    reader.set_buffer(osu_file, true);
 
     await reader.get_osu_data();
 
@@ -360,7 +354,7 @@ export const missing_initialize = async () => {
 
     // initialize for reading collection.db
     reader.set_type("collection");
-    reader.set_buffer(collection_file);
+    reader.set_buffer(collection_file, true);
 
     if (reader.collections.length == 0) {
         await reader.get_collections_data();

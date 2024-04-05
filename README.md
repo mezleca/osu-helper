@@ -4,7 +4,8 @@
 - go to the config.js file and enter the requested information.
 - start the script with npm start.
 
-# todo ( finished )
+# todo
+- [ ] filters for downloading beatmaps ( sr, mapper, etc... )
 - [x] implement osuCollector Downloader.
 - [x] multiple api download.
 - [x] fix bugs/crashes:

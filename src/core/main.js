@@ -42,7 +42,7 @@ const main = async () => {
     
     while (true) {
 
-        console.log("osu-helper 0.5 | type exit to... exit?\n");
+        console.log("osu-helper 0.5.2 | type exit to... exit?\n");
         
         if (current_option == null) {
             current_option = select_option();

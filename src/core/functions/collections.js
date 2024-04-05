@@ -15,7 +15,7 @@ reader.set_directory(path.resolve(config.get("osu_path")));
 const get_collections = async () => {
     
     const collections_buffer = fs.readFileSync(path.resolve(config.get("osu_path"), "collection.db"));
-    reader.set_buffer(Buffer.from(collections_buffer));
+    reader.set_buffer(Buffer.from(collections_buffer), true);
 
     await reader.get_collections_data();
 };
@@ -23,12 +23,15 @@ const get_collections = async () => {
 const get_osu = async () => {
     
     const buffer = fs.readFileSync(path.resolve(config.get("osu_path"), "osu!.db"));
-    reader.set_buffer(Buffer.from(buffer));
+    reader.set_buffer(Buffer.from(buffer), true);
 
     await reader.get_osu_data();
 };
 
 export const get_invalid_maps = async () => {
+
+    console.log("disabled for now");
+    return;
 
     console.log("\ncollecting maps and filtering invalid ones...\n");
     

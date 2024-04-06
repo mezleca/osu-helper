@@ -85,8 +85,8 @@ const download_map = async (b) => {
                 params.NoStoryBoard = true;
             }
 
-            const response = await axios.get(`${api.url}${b}`, { method: "GET", params });
-            const buffer = await response.arrayBuffer();
+            const response = await axios.get(`${api.url}${b}`, { method: "GET", params, responseType: "arraybuffer" });
+            const buffer = response.data;
 
             if (response.status != 200) {
                 continue;

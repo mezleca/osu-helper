@@ -1,5 +1,3 @@
-import path from "path";
-
 import { osu_db, collections_db } from "./definitions.js";
 export class OsuReader {
 
@@ -38,7 +36,7 @@ export class OsuReader {
     }
 
     set_directory = (directory) => {
-        this.directory = path.resolve(directory);
+        this.directory = directory;
     }
 
     #byte(){

@@ -30,9 +30,6 @@ const get_osu = async () => {
 
 export const get_invalid_maps = async () => {
 
-    console.log("disabled for now");
-    return;
-
     console.log("\ncollecting maps and filtering invalid ones...\n");
     
     // initialize variables
@@ -78,7 +75,7 @@ export const get_invalid_maps = async () => {
 
     console.log(`${mappers} maps has been found...\n`);
 
-    if (handle_prompt("do you want to remove them? (y/n) ") != "y") {
+    if (await handle_prompt("do you want to remove them? (y/n) ") != "y") {
         console.log("ok");
         return;
     } 

@@ -1,6 +1,6 @@
 {
     "name": "osu-helper",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "description": "osu helper",
     "scripts": {
         "start": "node src/core/main.js"
@@ -8,12 +8,9 @@
     "type": "module",
     "dependencies": {
         "axios": "^1.6.5",
-        "bluebird": "^3.7.2",
         "dotenv": "^16.3.2",
-        "node-fetch": "^3.3.2",
         "osu-api-extended": "^2.7.67",
         "p-map": "^7.0.1",
-        "p-queue": "^8.0.1",
-        "prompt-sync": "^4.2.0"
+        "p-queue": "^8.0.1"
     }
 }

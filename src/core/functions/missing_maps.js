@@ -85,7 +85,7 @@ const download_map = async (b) => {
                 params.NoStoryBoard = true;
             }
 
-            const response = await fetch(`${api.url}${b}`, { method: "GET", params });
+            const response = await axios.get(`${api.url}${b}`, { method: "GET", params });
             const buffer = await response.arrayBuffer();
 
             if (response.status != 200) {
@@ -98,7 +98,7 @@ const download_map = async (b) => {
         }
     }
     catch(err) {
-        // ...
+        //console.log(err);
     }
 };
 
@@ -155,14 +155,14 @@ const download_maps = async (map, index) => {
 
 const download_things = async () => {
     
-    if (handle_prompt("download from a specific collection? (y/n): ") == "y") {
+    if (await handle_prompt("download from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = handle_prompt("collection name: ");
+        const name = await handle_prompt("collection name: ");
 
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
         if (!missing_maps) {
@@ -184,14 +184,14 @@ const download_things = async () => {
 
 const export_shit = async () => {
 
-    if (handle_prompt("export from a specific collection? (y/n): ") == "y") {
+    if (await handle_prompt("export from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = handle_prompt("collection name: ");
+        const name = await handle_prompt("collection name: ");
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
 
         if (!missing_maps) {
@@ -242,7 +242,7 @@ export const get_beatmaps_collector = async () => {
     console.clear();
 
     // get collection maps
-    const url = handle_prompt("url: ");
+    const url = await handle_prompt("url: ");
 
     // get collection id
     const url_array = url.split("/");
@@ -287,7 +287,7 @@ export const get_beatmaps_collector = async () => {
 
     console.log(`Found ${filtered_maps.length} missing maps\n`);
 
-    const confirmation = handle_prompt("download? (y or n): ");
+    const confirmation = await handle_prompt("download? (y or n): ");
     if (confirmation.toLowerCase() == "y") {
 
         console.log("Downloading...\n");
@@ -307,7 +307,7 @@ export const get_beatmaps_collector = async () => {
         }
     }
 
-    const create_new_collection = handle_prompt("add the collection to osu? (y or n): ");
+    const create_new_collection = await handle_prompt("add the collection to osu? (y or n): ");
     if (create_new_collection != "y") {
         return;
     }
@@ -387,7 +387,7 @@ export const missing_initialize = async () => {
         console.log(`[${i}] - ${options[i].name}`)
     ]
 
-    const option = handle_prompt("select a option: ");
+    const option = await handle_prompt("select a option: ");
     if (option == "exit") {
         process.exit(0);
     }

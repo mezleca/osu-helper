@@ -1,9 +1,10 @@
+import fs from "fs";
+
 import { missing_initialize, get_beatmaps_collector } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";
 import { check_login, handle_prompt } from "../other/utils.js";
 
-// login :3
 export const login = await check_login();
 
 let current_option = null;
@@ -27,7 +28,7 @@ const menu_options = [
     }
 ];
 
-const select_option = () => {
+const select_option = async () => {
 
     for (let i = 0; i < menu_options.length; i++) {
         console.log(`[${i}] - ${menu_options[i].name}`);
@@ -35,17 +36,22 @@ const select_option = () => {
 
     console.log("\n");
 
-    return handle_prompt("select a option: ");
+    return await handle_prompt("select a option: ");
 };
 
 const main = async () => {
-    
+
+    // check if the data path exist's
+    if (!fs.existsSync("./data")) {
+        fs.mkdirSync("./data");     
+    }
+
     while (true) {
 
-        console.log("osu-helper 0.5.2 | type exit to... exit?\n");
+        console.log("osu-helper 0.5.3 | type exit to... exit?\n");
         
         if (current_option == null) {
-            current_option = select_option();
+            current_option = await select_option();
         }
 
         current_option = Number(current_option);

@@ -95,15 +95,15 @@ export class OsuReader {
         return value;
     }
 
-    #string(){     
-        
+    #string(){
         const is_present = this.#bool();
         if (!is_present) {
             return null;
         }
     
         const length = this.#uleb();
-        const value =  this.buffer.toString('utf-8', this.offset, this.offset + length.value);
+        const bytes = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, length.value);
+        const value = new TextDecoder().decode(bytes);
         this.offset += length.value;
     
         return value;
@@ -154,6 +154,7 @@ export class OsuReader {
         return this.#writeByte(value ? 0x01 : 0x00);
     }
 
+    // not sure is this works
     #writeString(value){
         if (value === null) {
             return this.#writeByte(0x00);

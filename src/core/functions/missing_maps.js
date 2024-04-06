@@ -18,6 +18,7 @@ const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"))
 
 let missing_maps = [];
 let invalid = [];
+let last_log = "";
 
 const invalid_maps = [];
 
@@ -80,6 +81,10 @@ const download_map = async (b) => {
             const api = mirrors[i];
             const params = {};
 
+            // if (debugging) {
+            //     return;
+            // }
+
             if (api.name == "nerinyan") {
                 params.NoHitsound = "true";
                 params.NoStoryBoard = true;
@@ -98,7 +103,7 @@ const download_map = async (b) => {
         }
     }
     catch(err) {
-        //console.log(err);
+        last_log = "Failed to find beatmap id: " + b;
     }
 };
 
@@ -106,6 +111,7 @@ Number.prototype.clamp = function(min, max) {
     return Math.min(Math.max(this, min), max);
 };
 
+// yep this code is terrible
 const progress_bar = (start, end) => {
 
     let sp = " "; 
@@ -114,8 +120,19 @@ const progress_bar = (start, end) => {
     let perc = Math.floor(start / end * 100).clamp(0, 100);
     let bars = Math.floor(perc / 10).clamp(0, 10); 
 
-    process.stdout.clearLine(); 
-    process.stdout.cursorTo(0); 
+    let lines = last_log ? 3 : 1;
+
+    for (let i = 0; i < lines - 1; i++) {
+        process.stdout.moveCursor(0, -1);
+        process.stdout.clearLine(0);
+    }
+
+    process.stdout.cursorTo(0);
+    if (last_log !== '') {
+        process.stdout.write(`\nLOG -> ${last_log}\n`);
+    }
+
+    process.stdout.cursorTo(0);
 
     process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat((10 - bars).clamp(0, 10))}] ${end - start} maps remaining`);
 }
@@ -132,6 +149,7 @@ const download_maps = async (map, index) => {
             
             const id = (await search_map_id(hash)).beatmapset_id;
             if (!id) {
+                last_log = "Failed to find beatmap id: " + map.hash;
                 invalid_maps.push({ hash: map.hash });
                 return;
             }
@@ -143,11 +161,13 @@ const download_maps = async (map, index) => {
            
     } catch(error) {
 
-        invalid_maps.push({ hash: map.hash });
+        invalid_maps.push({ hash: map.id });
 
         if (error.data) {
             return console.log(error.data.message);
         }
+
+        last_log = "Failed to find beatmap hash: " + map.hash;
 
         console.log(error);
     }
@@ -164,7 +184,8 @@ const download_things = async () => {
 
         const name = await handle_prompt("collection name: ");
 
-        missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
+        missing_maps = missing_maps.filter((a) => { return a.collection_name == name });
+
         if (!missing_maps) {
             console.log("collection not found.");
             return;
@@ -183,6 +204,8 @@ const download_things = async () => {
 };
 
 const export_shit = async () => {
+
+    const ids = [];
 
     if (await handle_prompt("export from a specific collection? (y/n): ") == "y") {
 
@@ -204,15 +227,14 @@ const export_shit = async () => {
 
     console.log("searching beatmap id's... ( this might take a while )");
 
-    const ids = [];
-
     await new Promise(async (re) => {
 
         for (let i = 0; i < missing_maps.length; i++) {
 
+            const map = missing_maps[i];
+
             try {
-                
-                const map = missing_maps[i];
+            
                 const hash = map.hash;
                 const info = await search_map_id(hash);   
                 
@@ -248,8 +270,6 @@ export const get_beatmaps_collector = async () => {
     const url_array = url.split("/");
     const collection_id = url_array[url_array.length - 2];
 
-    //console.log(collection_id);
-
     // request collection data from osuCollector api
     const collection_url = `https://osucollector.com/api/collections/${collection_id}`;
     const collection = await axios.get(collection_url);
@@ -259,6 +279,11 @@ export const get_beatmaps_collector = async () => {
     }
 
     const data = await collection.data;
+
+    if (!data.beatmapsets) {
+        console.log("\nFailed to get collection from osu collector\n");
+        return;
+    }
 
     const hashes = data.beatmapsets.flatMap((beatmapset) => {
         return beatmapset.beatmaps.map((beatmap) => beatmap.checksum);

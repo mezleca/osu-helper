@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 
+import { handle_prompt } from "../../other/utils.js";
+
 const base_url = "https://api.nerinyan.moe/d/";
 
 export const download_initialize = async () => {

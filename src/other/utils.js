@@ -31,7 +31,8 @@ export const check_login = async () => {
         console.log("hmm it seems your osu_id / osu_secret is invalid...\nmake sure to use the correct shit in the config.js file");
         process.exit(1);     
     } catch (err) {
-        process.exit(1);
+        console.clear();
+        console.log("Failed to connect to osu api\nTo use all features restart the script\n");
     }
 };
 

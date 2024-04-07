@@ -5,6 +5,8 @@ export class OsuReader {
     collections; 
     /** @type {osu_db} */
     osu;
+    /** @type {DataView} */
+    buffer;
 
     constructor() {
         this.type = "osu";
@@ -93,87 +95,97 @@ export class OsuReader {
         return value;
     }
 
-    #string(){
+    #string() {
         const is_present = this.#bool();
         if (!is_present) {
             return null;
         }
-    
+
         const length = this.#uleb();
-        const bytes = new Uint8Array(this.buffer.buffer, this.buffer.byteOffset + this.offset, length.value);
-        const value = new TextDecoder().decode(bytes);
+        const buffer = new Uint8Array(this.buffer.buffer, this.offset, length.value);
+        const decoder = new TextDecoder('utf-8');
+        const value = decoder.decode(buffer);
         this.offset += length.value;
-    
+
         return value;
     }
-
+    
     #skip(b) {
         this.offset += b;     
     }
 
-    // TODO
-    #writeByte(value){
-        const buffer = Buffer.alloc(1);
-        buffer.writeUInt8(value, 0);
+    #writeByte(value) {
+        const buffer = new ArrayBuffer(1);
+        const dataView = new DataView(buffer);
+        dataView.setUint8(0, value);
         return buffer;
     }
 
-    #writeShort(value){
-        const buffer = Buffer.alloc(2);
-        buffer.writeUInt16LE(value, 0);
+    #writeShort(value) {
+        const buffer = new ArrayBuffer(2);
+        const dataView = new DataView(buffer);
+        dataView.setUint16(0, value, true);
         return buffer;
     }
 
-    #writeInt(value){
-        const buffer = Buffer.alloc(4);
-        buffer.writeUInt32LE(value, 0);
+    #writeInt(value) {
+        const buffer = new ArrayBuffer(4);
+        const dataView = new DataView(buffer);
+        dataView.setUint32(0, value, true);
         return buffer;
     }
 
-    #writeLong(value){
-        const buffer = Buffer.alloc(8);
-        buffer.writeBigInt64LE(BigInt(value), 0);
+    #writeLong(value) {
+        const buffer = new ArrayBuffer(8);
+        const dataView = new DataView(buffer);
+        dataView.setBigInt64(0, BigInt(value), true);
         return buffer;
     }
 
-    #writeSingle(value){
-        const buffer = Buffer.alloc(4);
-        buffer.writeFloatLE(value, 0);
+    #writeSingle(value) {
+        const buffer = new ArrayBuffer(4);
+        const dataView = new DataView(buffer);
+        dataView.setFloat32(0, value, true);
         return buffer;
     }
 
-    #writeDouble(value){
-        const buffer = Buffer.alloc(8);
-        buffer.writeDoubleLE(value, 0);
+    #writeDouble(value) {
+        const buffer = new ArrayBuffer(8);
+        const dataView = new DataView(buffer);
+        dataView.setFloat64(0, value, true);
         return buffer;
     }
 
-    #writeBool(value){
+    #writeBool(value) {
         return this.#writeByte(value ? 0x01 : 0x00);
     }
 
-    // not sure is this works
-    #writeString(value){
+    #writeString(value) {
         if (value === null) {
             return this.#writeByte(0x00);
         }
-        const lengthBuffer = this.#writeULEB128(value.length);
-        const stringBuffer = Buffer.from(value, 'utf-8');
-        return Buffer.concat([this.#writeByte(0x0B), lengthBuffer, stringBuffer]);
+        const stringBuffer = new TextEncoder().encode(value);
+        const lengthBuffer = this.#writeULEB128(stringBuffer.byteLength);
+        const resultBuffer = new Uint8Array(lengthBuffer.byteLength + stringBuffer.byteLength + 1);
+        resultBuffer.set(new Uint8Array([0x0B]), 0);
+        resultBuffer.set(new Uint8Array(lengthBuffer), 1);
+        resultBuffer.set(new Uint8Array(stringBuffer), 1 + lengthBuffer.byteLength);
+        return resultBuffer.buffer;
     }
 
     #writeULEB128(value) {
-        const buffer = Buffer.alloc(5);
+        const buffer = new ArrayBuffer(5); // max 5 bytes for 32-bit number
+        const dataView = new DataView(buffer);
         let offset = 0;
         do {
             let byte = value & 0x7F;
             value >>>= 7;
-            if (value !== 0) {
+            if (value !== 0) { /* more bytes to come */
                 byte |= 0x80;
             }
-            buffer.writeUInt8(byte, offset++);
+            dataView.setUint8(offset++, byte);
         } while (value !== 0);
-        return buffer.slice(0, offset);
+        return buffer.slice(0, offset); // remove unused bytes
     }
 
     write_collections_data = () => {
@@ -205,7 +217,14 @@ export class OsuReader {
                 }
             };
 
-            this.buffer = Buffer.concat(buffer_array);
+            const concate = buffer_array.reduce((acc, curr) => {
+                const newBuffer = new Uint8Array(acc.byteLength + curr.byteLength);
+                newBuffer.set(new Uint8Array(acc), 0);
+                newBuffer.set(new Uint8Array(curr), acc.byteLength);
+                return newBuffer.buffer;
+            }, new ArrayBuffer(0));
+
+            this.buffer = concate;
 
             r(this.buffer);
         });
@@ -215,12 +234,16 @@ export class OsuReader {
 
         return new Promise(async (resolve) => {
 
+            if (!this.osu.beatmaps) {
+                resolve();
+            }
+
             const beatmaps = [];
 
             const version = this.#int();
             const folders = this.#int();
             const account_unlocked = this.#bool();
-            // skip date_time cuz why not
+
             this.#skip(8);
 
             const player_name = this.#string();
@@ -337,8 +360,7 @@ export class OsuReader {
 
                 if (limit && beatmaps.length + 1 > limit) {
                     continue;
-                }                     
-                
+                }                               
             }
        
             const permissions_id = this.#int();
@@ -369,7 +391,8 @@ export class OsuReader {
             }
 
             this.offset = 0;
-            this.osu = { version, folders, account_unlocked, player_name, beatmaps_count, beatmaps, permissions_id, permission };   
+            this.osu = { version, folders, account_unlocked, player_name, beatmaps_count, beatmaps, permissions_id, permission }; 
+
             resolve();     
         });
     };
@@ -390,7 +413,7 @@ export class OsuReader {
                 
                 const md5 = [];
 
-                for (let i = 0; i < count; i++) {
+                for (let i = 0; i < bm_count; i++) {
                     const map = this.#string();
                     md5.push(map);
                 }

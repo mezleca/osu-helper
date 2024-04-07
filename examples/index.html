@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- READ COLLECTION FILE AND RENAME EVERY COLLECTION TO "modified" THEN DOWNLOAD THE NEW COLLECTION FILE -->
+</head>
+<body>
+    <script src="minified-osu-reader.js"></script>
+    <script>
+        const OSUreader = new OsuReader();
+        document.addEventListener("click", () => {  
+            const new_input = document.createElement("input");
+            new_input.type = "file";
+            new_input.setAttribute("directory", "true");
+            new_input.click();
+
+            new_input.addEventListener("change", () => {
+                const reader = new FileReader();
+                reader.addEventListener("load", async (e) => {
+                    OSUreader.set_buffer(e.target.result);
+                    await OSUreader.get_collections_data();
+                    const a = document.createElement("a");
+                    // some modifications
+                    for (let i = 0; i < OSUreader.collections.beatmaps.length; i++) {
+                        const collection = OSUreader.collections.beatmaps[i];
+                        console.log(collection);
+                        collection.name = "modified";
+                    }
+                    const buffer = await OSUreader.write_collections_data();
+                    const blob = new Blob([buffer], { type: "application/octet-stream"})
+                    const obj = URL.createObjectURL(blob);
+                    a.href = obj;
+                    a.download = "collection.db";
+                    a.click();
+                });
+                reader.readAsArrayBuffer(new_input.files[0]); 
+            });
+        });
+    </script>
+</body>
+</html>

@@ -74,7 +74,7 @@ const download_map = async (b) => {
 
     try {
 
-        const Path = path.resolve("./data/", `${b}.osz`);
+        const Path = path.resolve(config.get("osu_songs_folder"), `${b}.osz`);
 
         for (let i = 0; i < mirrors.length; i++) {
 
@@ -225,7 +225,7 @@ const export_shit = async () => {
         console.log("Found:", missing_maps.length, "maps");
     }
 
-    console.log("searching beatmap id's... ( this might take a while )");
+    console.log("\nsearching beatmap id's... ( this might take a while )");
 
     await new Promise(async (re) => {
 
@@ -256,10 +256,15 @@ const export_shit = async () => {
 
     fs.writeFileSync("./data/beatmaps.json", JSON.stringify(o, null , 4));
 
-    console.log("beatmaps.json has been saved in the data folder");
+    console.log("\nbeatmaps.json has been saved in the data folder\n");
 };
 
 export const get_beatmaps_collector = async () => {
+
+    if (!login) {
+        console.log("Please restart the script to use this feature");
+        return;
+    }
 
     console.clear();
 
@@ -412,20 +417,25 @@ export const missing_initialize = async () => {
         console.log(`[${i}] - ${options[i].name}`)
     ]
 
-    const option = await handle_prompt("select a option: ");
+    const option = Number(await handle_prompt("select a option: "));
     if (option == "exit") {
         process.exit(0);
     }
 
-    if (Number(option) > options.length) {
+    if (option > options.length) {
         return;
     }
 
-    if (Number(option) == 0) {
-        await download_things();
+    if (login) {
+        console.log("Please restart the script to use this feature");
         return;
     }
 
-    await export_shit();
+    if (option == 1) {
+        await export_shit();
+        return;
+    }
+
+    await download_things();
     return;
 };

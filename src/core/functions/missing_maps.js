@@ -426,7 +426,7 @@ export const missing_initialize = async () => {
         return;
     }
 
-    if (login) {
+    if (!login) {
         console.log("Please restart the script to use this feature");
         return;
     }

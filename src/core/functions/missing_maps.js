@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import axios from "axios";
-import fetch from "node-fetch"
 import pMap from 'p-map';
 
 import { OsuReader } from "../reader/reader.js";
@@ -72,23 +71,19 @@ export const search_map_id = async (hash) => {
 
 const download_map = async (b) => {
 
-    try {
+    const Path = path.resolve(config.get("osu_songs_folder"), `${b}.osz`);
 
-        const Path = path.resolve(config.get("osu_songs_folder"), `${b}.osz`);
+    for (let i = 0; i < mirrors.length; i++) {
 
-        for (let i = 0; i < mirrors.length; i++) {
+        const api = mirrors[i];
+        const params = {};
 
-            const api = mirrors[i];
-            const params = {};
+        if (api.name == "nerinyan") {
+            params.NoHitsound = "true";
+            params.NoStoryBoard = true;
+        }
 
-            // if (debugging) {
-            //     return;
-            // }
-
-            if (api.name == "nerinyan") {
-                params.NoHitsound = "true";
-                params.NoStoryBoard = true;
-            }
+        try {
 
             const response = await axios.get(`${api.url}${b}`, { method: "GET", params, responseType: "arraybuffer" });
             const buffer = response.data;
@@ -98,13 +93,17 @@ const download_map = async (b) => {
             }
 
             fs.writeFileSync(Path, Buffer.from(buffer));
+        } catch(err) {
 
-            break;
+            if (i == mirrors.length - 1) {
+                last_log = "Failed to find beatmap id: " + b;
+            }
+
+            continue;
         }
+        break;
     }
-    catch(err) {
-        last_log = "Failed to find beatmap id: " + b;
-    }
+    
 };
 
 Number.prototype.clamp = function(min, max) {
@@ -259,6 +258,29 @@ const export_shit = async () => {
     console.log("\nbeatmaps.json has been saved in the data folder\n");
 };
 
+const get_tournament_maps = async(id) => {
+    const response = await axios.get(`https://osucollector.com/api/tournaments/${id}`);
+    const data = response.data;
+
+    const maps = [];
+    const collection = {};
+    const rounds = data.rounds;
+
+    for (let i = 0; i < rounds.length; i++) {
+        const round = rounds[i].mods;
+        for (let k = 0; k < round.length; k++) {
+            const mods = round[k].maps;
+            maps.push(...mods);
+        }
+    }
+
+    collection.name = data.name;
+    collection.status = response.status;
+    collection.beatmapsets = maps;
+
+    return collection;
+};
+
 export const get_beatmaps_collector = async () => {
 
     if (!login) {
@@ -275,24 +297,25 @@ export const get_beatmaps_collector = async () => {
     const url_array = url.split("/");
     const collection_id = url_array[url_array.length - 2];
 
-    // request collection data from osuCollector api
-    const collection_url = `https://osucollector.com/api/collections/${collection_id}`;
-    const collection = await axios.get(collection_url);
-
-    if (collection.status != 200) {
-        return console.log("\ncollection not found");
-    }
-
-    const data = await collection.data;
-
-    if (!data.beatmapsets) {
-        console.log("\nFailed to get collection from osu collector\n");
+    if (!collection_id) {
+        console.log("Invalid URL\n");
         return;
     }
 
-    const hashes = data.beatmapsets.flatMap((beatmapset) => {
-        return beatmapset.beatmaps.map((beatmap) => beatmap.checksum);
-    });
+    // request collection data from osuCollector api
+    const is_tournament = url_array.includes("tournaments");
+    const collection_url = `https://osucollector.com/api/collections/${collection_id}`;
+    const Rcollection = is_tournament ? await get_tournament_maps(collection_id) : await axios.get(collection_url);
+    const collection = is_tournament ? Rcollection : Rcollection.data;
+
+    if (Rcollection.status != 200) {
+        return console.log("\ncollection not found");
+    }
+
+    if (!collection.beatmapsets) {
+        console.log("\nFailed to get collection from osu collector\n");
+        return;
+    }
 
     reader.set_type("osu");
     reader.set_buffer(osu_file, true);
@@ -311,7 +334,13 @@ export const get_beatmaps_collector = async () => {
 
     // get maps that are currently missing
     const maps_hashes = new Set(reader.osu.beatmaps.map((beatmap) => beatmap.md5));
-    const filtered_maps = data.beatmapsets.filter((beatmapset) => {
+
+    const filtered_maps = is_tournament ?
+    collection.beatmapsets.filter((beatmap) => {
+        return !maps_hashes.has(beatmap.checksum) && beatmap.checksum && beatmap.beatmapset;
+    }).map((b) => b.beatmapset )
+    : // else
+    collection.beatmapsets.filter((beatmapset) => {
         return !beatmapset.beatmaps.some((beatmap) => maps_hashes.has(beatmap.checksum));
     });
 
@@ -350,8 +379,8 @@ export const get_beatmaps_collector = async () => {
     }
 
     reader.collections.beatmaps.push({
-        name: "!helper - " + data.name,
-        maps: hashes
+        name: "!helper - " + collection.name,
+        maps: maps_hashes
     });
 
     reader.collections.length++;
@@ -411,7 +440,7 @@ export const missing_initialize = async () => {
     }
 
     console.clear();
-    console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`);
+    console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`); 
 
     for (let i = 0; i < options.length; i++) [
         console.log(`[${i}] - ${options[i].name}`)

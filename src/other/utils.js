@@ -1,5 +1,5 @@
 import fs from "fs";
-
+import path from "path";
 import { config } from "./config.js";
 import { auth } from "osu-api-extended";
 import readline from "readline-sync";

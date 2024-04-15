@@ -159,29 +159,21 @@ const download_maps = async (map, index) => {
         await download_map(map.id);
            
     } catch(error) {
-
         invalid_maps.push({ hash: map.id });
-
-        if (error.data) {
-            return console.log(error.data.message);
-        }
-
         last_log = "Failed to find beatmap hash: " + map.hash;
-
-        console.log(error);
     }
 };
 
 const download_things = async () => {
     
-    if (await handle_prompt("download from a specific collection? (y/n): ") == "y") {
+    if (handle_prompt("download from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = await handle_prompt("collection name: ");
+        const name = handle_prompt("collection name: ");
 
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name });
 
@@ -206,14 +198,14 @@ const export_shit = async () => {
 
     const ids = [];
 
-    if (await handle_prompt("export from a specific collection? (y/n): ") == "y") {
+    if (handle_prompt("export from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = await handle_prompt("collection name: ");
+        const name = handle_prompt("collection name: ");
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
 
         if (!missing_maps) {
@@ -253,7 +245,7 @@ const export_shit = async () => {
     // remove duplicate maps.
     const o = [...new Set(ids)];
 
-    fs.writeFileSync("./data/beatmaps.json", JSON.stringify(o, null , 4));
+    fs.writeFileSync(path.resolve("./data/beatmaps.json"), JSON.stringify(o, null , 4));
 
     console.log("\nbeatmaps.json has been saved in the data folder\n");
 };
@@ -288,10 +280,8 @@ export const get_beatmaps_collector = async () => {
         return;
     }
 
-    console.clear();
-
     // get collection maps
-    const url = await handle_prompt("url: ");
+    const url = handle_prompt("url: ");
 
     // get collection id
     const url_array = url.split("/");
@@ -332,9 +322,18 @@ export const get_beatmaps_collector = async () => {
         }
     }
 
+    // collection.beatmapsets.map((b) => {
+    //     console.log(b);
+    //     return;
+    // });
+
     // get maps that are currently missing
     const maps_hashes = new Set(reader.osu.beatmaps.map((beatmap) => beatmap.md5));
-
+    const collection_hashes= [...new Set(
+        collection.beatmapsets.flatMap(
+          (b) => b.beatmaps.map((b) => b.checksum)
+        )
+      )];
     const filtered_maps = is_tournament ?
     collection.beatmapsets.filter((beatmap) => {
         return !maps_hashes.has(beatmap.checksum) && beatmap.checksum && beatmap.beatmapset;
@@ -346,7 +345,7 @@ export const get_beatmaps_collector = async () => {
 
     console.log(`Found ${filtered_maps.length} missing maps\n`);
 
-    const confirmation = await handle_prompt("download? (y or n): ");
+    const confirmation = handle_prompt("download? (y or n): ");
     if (confirmation.toLowerCase() == "y") {
 
         console.log("Downloading...\n");
@@ -366,7 +365,7 @@ export const get_beatmaps_collector = async () => {
         }
     }
 
-    const create_new_collection = await handle_prompt("add the collection to osu? (y or n): ");
+    const create_new_collection = handle_prompt("add the collection to osu? (y or n): ");
     if (create_new_collection != "y") {
         return;
     }
@@ -380,16 +379,22 @@ export const get_beatmaps_collector = async () => {
 
     reader.collections.beatmaps.push({
         name: "!helper - " + collection.name,
-        maps: maps_hashes
+        maps: collection_hashes
     });
 
     reader.collections.length++;
 
     const buffer = await reader.write_collections_data();
+    const backup_name = `collection_backup_${Date.now()}.db`;
 
-    fs.writeFileSync("./data/collection.db", Buffer.from(buffer));
+    // backup 
+    fs.renameSync(path.resolve(config.get("osu_path"), "collection.db"), path.resolve(config.get("osu_path"), backup_name));
+    // write the new one
+    fs.writeFileSync(path.resolve(config.get("osu_path"), "collection.db"), Buffer.from(buffer));
 
-    console.log("a new collection file has been created! ( in the data folder )\ncopy the file and paste into the osu! folder ( make sure to backup the old one )")
+    console.clear();
+
+    console.log("\nYour collection file has been updated!\nA backup file named", backup_name, "has been created in your osu directory\nrename it to collection.db in case the new one is corrupted\n");
 }
 
 export const missing_initialize = async () => {
@@ -439,14 +444,13 @@ export const missing_initialize = async () => {
         }
     }
 
-    console.clear();
     console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`); 
 
     for (let i = 0; i < options.length; i++) [
         console.log(`[${i}] - ${options[i].name}`)
     ]
 
-    const option = Number(await handle_prompt("select a option: "));
+    const option = Number(handle_prompt("select a option: "));
     if (option == "exit") {
         process.exit(0);
     }

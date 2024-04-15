@@ -75,7 +75,7 @@ export const get_invalid_maps = async () => {
 
     console.log(`found ${mappers} invalid / unknown maps`);
 
-    if (await handle_prompt("do you want to remove them? (y/n) ") != "y") {
+    if (handle_prompt("do you want to remove them? (y/n) ") != "y") {
         console.log("ok");
         return;
     } 
@@ -86,8 +86,14 @@ export const get_invalid_maps = async () => {
     }
 
     const buffer = await reader.write_collections_data();
+    const backup_name = `collection_backup_${Date.now()}.db`;
 
-    fs.writeFileSync("./data/collection.db", Buffer.from(buffer));
+    // backup 
+    fs.renameSync(path.resolve(config.get("osu_path"), "collection.db"), path.resolve(config.get("osu_path"), backup_name));
+    // write the new one
+    fs.writeFileSync(path.resolve(config.get("osu_path"), "collection.db"), Buffer.from(buffer));
 
-    console.log("\na new collection.db file has been generated. make sure to backup the old one before replacing in osu\n");
+    console.clear();
+
+    console.log("\nYour collection file has been updated!\nA backup file named", backup_name, "has been created in your osu directory\nrename it to collection.db in case the new one is corrupted\n");
 };

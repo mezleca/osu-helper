@@ -36,7 +36,7 @@ const select_option = async () => {
 
     console.log("\n");
 
-    return await handle_prompt("select a option: ");
+    return handle_prompt("select a option: ");
 };
 
 const main = async () => {

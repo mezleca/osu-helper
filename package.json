@@ -1,6 +1,6 @@
 {
     "name": "osu-helper",
-    "version": "0.6.0",
+    "version": "0.6.2",
     "description": "osu helper",
     "scripts": {
         "start": "node src/core/main.js"

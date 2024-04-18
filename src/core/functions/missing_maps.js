@@ -185,7 +185,7 @@ const download_things = async () => {
         console.log("Found:", missing_maps.length, "maps");
     }
 
-    await pMap(missing_maps, download_maps, { concurrency: 3 }); 
+    await pMap(missing_maps, download_maps, { concurrency: 5 }); 
 
     console.log(`\ndone!`);
 
@@ -322,18 +322,20 @@ export const get_beatmaps_collector = async () => {
         }
     }
 
-    // collection.beatmapsets.map((b) => {
-    //     console.log(b);
-    //     return;
-    // });
-
+    // TODO: make this more readable and less stupid.
     // get maps that are currently missing
     const maps_hashes = new Set(reader.osu.beatmaps.map((beatmap) => beatmap.md5));
-    const collection_hashes= [...new Set(
+    const collection_hashes = is_tournament ? 
+    [...new Set(
+        collection.beatmapsets.map((b) => b.checksum)
+    )]
+    : // else
+    [...new Set(
         collection.beatmapsets.flatMap(
           (b) => b.beatmaps.map((b) => b.checksum)
         )
-      )];
+    )];
+    
     const filtered_maps = is_tournament ?
     collection.beatmapsets.filter((beatmap) => {
         return !maps_hashes.has(beatmap.checksum) && beatmap.checksum && beatmap.beatmapset;
@@ -352,7 +354,7 @@ export const get_beatmaps_collector = async () => {
 
         missing_maps = filtered_maps;
 
-        await pMap(missing_maps, download_maps, { concurrency: 3 }); 
+        await pMap(missing_maps, download_maps, { concurrency: 5 }); 
     
         // clean progress bar line
         process.stdout.clearLine(); 

@@ -1,10 +1,37 @@
 import fs from "fs";
 import path from "path";
+import readline from "readline-sync";
+import Terminal from "terminal-kit";
+
 import { config } from "./config.js";
 import { auth } from "osu-api-extended";
-import readline from "readline-sync";
 
 const missing_config = [];
+const terminal = Terminal.terminal;
+
+export const show_menu = (list) => new Promise((resolve, reject) => {
+    console.log("Select a option: ");
+    terminal.singleColumnMenu(list.map((a) => "-> " + a.name), async (err, res) => {
+
+        const item = list[res.selectedIndex];
+
+        if (err) {
+            console.log("ERROR");
+            process.exit();
+        }
+
+        if (!item.callback) {
+            console.log("Missing callback");
+            reject();
+        }
+        
+        console.log("\n");
+
+        await item.callback();
+
+        resolve();
+    });
+});
 
 const prompt = (question) => {
     return readline.question(question);
@@ -40,7 +67,7 @@ export const check_config = async () => {
         console.log("\nenter the following values\n");
     
         for (const key of missing_config) {
-            let value = handle_prompt(`${key}: `);
+            let value = await handle_prompt(`${key}: `);
             value = value.replace(/\\/g, '\\\\');
             config.set(key, value);
         }
@@ -71,8 +98,10 @@ export const check_path = () => {
     process.exit(1);
 };
 
-export const handle_prompt = (question) => {
-    const answer = prompt(question);
+export const handle_prompt = async (question) => {
+    process.stdout.write(question);
+    const answer = await terminal.inputField().promise;
+    console.log("\n");
     if (answer == "exit") {
         console.log("ok");
         process.exit(0);

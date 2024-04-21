@@ -2,11 +2,12 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import pMap from 'p-map';
+import Terminal from "terminal-kit";
 
 import { OsuReader } from "../reader/reader.js";
 import { config } from "../../other/config.js";
-import { login } from "../main.js";
-import { check_path, handle_prompt } from "../../other/utils.js";
+import { login } from "../index.js";
+import { check_path, handle_prompt, show_menu } from "../../other/utils.js";
 
 check_path();
 
@@ -21,27 +22,18 @@ let last_log = "";
 
 const invalid_maps = [];
 
-const options = [
-    {
-        name: "download"
-    },
-    {
-        name: "export beatmaps to a json file"
-    }
-];
-
 const mirrors = [
     {
-        name: "direct",
-        url: "https://api.osu.direct/d/"
+        name: "chimue",
+        url: "https://api.chimu.moe/v1/download/"
     },
     {
         name: "nerinyan",
         url: "https://api.nerinyan.moe/d/"
     },
     {
-        name: "chimue",
-        url: "https://api.chimu.moe/v1/download/"
+        name: "direct",
+        url: "https://api.osu.direct/d/"
     }
 ];
 
@@ -62,6 +54,7 @@ export const search_map_id = async (hash) => {
 
         return data;
     } catch(err) {
+        //console.log(err)
         if (err.response) {
             return false; 
         }
@@ -95,6 +88,8 @@ const download_map = async (b) => {
             fs.writeFileSync(Path, Buffer.from(buffer));
         } catch(err) {
 
+            //console.log(err)
+
             if (i == mirrors.length - 1) {
                 last_log = "Failed to find beatmap id: " + b;
             }
@@ -110,11 +105,18 @@ Number.prototype.clamp = function(min, max) {
     return Math.min(Math.max(this, min), max);
 };
 
-// yep this code is terrible
+let pirocas = ["|", "/", "-", "\\"];
+let current_piroca = 0;
+
 const progress_bar = (start, end) => {
 
     let sp = " "; 
     let bar = "█"; 
+
+    current_piroca++;
+    if (current_piroca > pirocas.length - 1) {
+        current_piroca = 0;
+    }
 
     let perc = Math.floor(start / end * 100).clamp(0, 100);
     let bars = Math.floor(perc / 10).clamp(0, 10); 
@@ -125,15 +127,14 @@ const progress_bar = (start, end) => {
         process.stdout.moveCursor(0, -1);
         process.stdout.clearLine(0);
     }
-
-    process.stdout.cursorTo(0);
+    
     if (last_log !== '') {
+        process.stdout.cursorTo(0);
         process.stdout.write(`\nLOG -> ${last_log}\n`);
     }
 
     process.stdout.cursorTo(0);
-
-    process.stdout.write(`progress: [${bar.repeat(bars)}${sp.repeat((10 - bars).clamp(0, 10))}] ${end - start} maps remaining`);
+    process.stdout.write(`downloading: [${bar.repeat(bars)}${sp.repeat((10 - bars).clamp(0, 10))}] ${perc}% ${pirocas[current_piroca]}`);
 }
 
 const download_maps = async (map, index) => {
@@ -161,19 +162,20 @@ const download_maps = async (map, index) => {
     } catch(error) {
         invalid_maps.push({ hash: map.id });
         last_log = "Failed to find beatmap hash: " + map.hash;
+        //console.log(error)
     }
 };
 
 const download_things = async () => {
     
-    if (handle_prompt("download from a specific collection? (y/n): ") == "y") {
+    if (await handle_prompt("download from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = handle_prompt("collection name: ");
+        const name = await handle_prompt("collection name: ");
 
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name });
 
@@ -198,14 +200,14 @@ const export_shit = async () => {
 
     const ids = [];
 
-    if (handle_prompt("export from a specific collection? (y/n): ") == "y") {
+    if (await handle_prompt("export from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
 
         // print all collections name
         console.log("collections:", collections.join("\n"));
 
-        const name = handle_prompt("collection name: ");
+        const name = await handle_prompt("collection name: ");
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
 
         if (!missing_maps) {
@@ -234,6 +236,7 @@ const export_shit = async () => {
                 }
     
             } catch(err) {
+                //console.log(err);
                 invalid.push({ hash: map.hash });
                 throw err;
             }    
@@ -273,22 +276,35 @@ const get_tournament_maps = async(id) => {
     return collection;
 };
 
+const options = [
+    {
+        name: "download",
+        callback: download_things
+    },
+    {
+        name: "export beatmaps to a json file",
+        callback: export_shit
+    }
+];
+
 export const get_beatmaps_collector = async () => {
 
     if (!login) {
-        console.log("Please restart the script to use this feature");
+        console.log("\nPlease restart the script to use this feature\n");
         return;
     }
 
+    console.clear();
+
     // get collection maps
-    const url = handle_prompt("url: ");
+    const url = await handle_prompt("url: ");
 
     // get collection id
     const url_array = url.split("/");
     const collection_id = url_array[url_array.length - 2];
 
     if (!collection_id) {
-        console.log("Invalid URL\n");
+        console.log("\nInvalid URL\n");
         return;
     }
 
@@ -345,12 +361,10 @@ export const get_beatmaps_collector = async () => {
         return !beatmapset.beatmaps.some((beatmap) => maps_hashes.has(beatmap.checksum));
     });
 
-    console.log(`Found ${filtered_maps.length} missing maps\n`);
+    console.log(`Found ${filtered_maps.length} missing maps`);
 
-    const confirmation = handle_prompt("download? (y or n): ");
-    if (confirmation.toLowerCase() == "y") {
-
-        console.log("Downloading...\n");
+    const confirmation = await handle_prompt("download? (y or n): ");
+    if (confirmation == "y") {
 
         missing_maps = filtered_maps;
 
@@ -367,7 +381,7 @@ export const get_beatmaps_collector = async () => {
         }
     }
 
-    const create_new_collection = handle_prompt("add the collection to osu? (y or n): ");
+    const create_new_collection = await handle_prompt("add the collection to osu? (y or n): ");
     if (create_new_collection != "y") {
         return;
     }
@@ -448,29 +462,14 @@ export const missing_initialize = async () => {
 
     console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`); 
 
-    for (let i = 0; i < options.length; i++) [
-        console.log(`[${i}] - ${options[i].name}`)
-    ]
+    await show_menu(options);
 
-    const option = Number(handle_prompt("select a option: "));
-    if (option == "exit") {
-        process.exit(0);
-    }
-
-    if (option > options.length) {
-        return;
-    }
+    console.clear();
 
     if (!login) {
-        console.log("Please restart the script to use this feature");
+        console.log("\nPlease restart the script to use this feature\n");
         return;
     }
 
-    if (option == 1) {
-        await export_shit();
-        return;
-    }
-
-    await download_things();
     return;
 };

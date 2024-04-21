@@ -10,7 +10,7 @@ export const download_initialize = async () => {
 
     console.log("\nWARN: make sure your input file is a json and have this format\n-> ['https://osu.ppy.sh/beatmapsets/id_here', ...]\n");
 
-    let file_path = handle_prompt("enter the file path: ");
+    let file_path = await handle_prompt("enter the file path: ");
     const format = file_path.split(".");
 
     if (format[format.length - 1] != "json") {
@@ -27,7 +27,7 @@ export const download_initialize = async () => {
 
     // verify if the file exists
     if (!fs.existsSync(path.resolve(file_path))) {
-        console.log("file not found");
+        console.log("\nfile not found\n");
         return;
     }
 
@@ -50,7 +50,7 @@ export const download_initialize = async () => {
         });
 
         if (response.statusText != "OK") {
-            console.log("cannot find " + b);
+            console.log("\ncannot find " + b + "\n");
             return;
         }
 
@@ -66,5 +66,7 @@ export const download_initialize = async () => {
         });
     }
 
-    console.log("\ndone!");
+    console.clear();
+
+    console.log("\ndone!\n");
 };

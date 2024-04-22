@@ -168,14 +168,19 @@ const download_maps = async (map, index) => {
 
 const download_things = async () => {
     
-    if (await handle_prompt("download from a specific collection? (y/n): ") == "y") {
+    if (await handle_prompt("download from a specific collection? (y/n): ")) {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
+        const obj = [];
 
-        // print all collections name
-        console.log("collections:", collections.join("\n"));
+        for (let i = 0; i < collections.length; i++) {
+            if (collections[i]) {
+                obj.push({ name: collections[i] });
+            }
+        }
 
-        const name = await handle_prompt("collection name: ");
+        const selected_index = await show_menu(obj);
+        const name = obj[selected_index].name;
 
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name });
 
@@ -187,7 +192,9 @@ const download_things = async () => {
         console.log("Found:", missing_maps.length, "maps");
     }
 
-    await pMap(missing_maps, download_maps, { concurrency: 5 }); 
+    await pMap(missing_maps, download_maps, { concurrency: 5 });
+    
+    console.clear();
 
     console.log(`\ndone!`);
 
@@ -415,6 +422,8 @@ export const get_beatmaps_collector = async () => {
 
 export const missing_initialize = async () => {
 
+    console.clear();
+
     // check if data folder exists
     if (!fs.existsSync("./data/")) {
         fs.mkdirSync("./data/");
@@ -460,11 +469,11 @@ export const missing_initialize = async () => {
         }
     }
 
-    console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`); 
+    console.clear();
+
+    console.log(`found ${missing_maps.length} missing maps\n${invalid.length} are unknown maps.`);
 
     await show_menu(options);
-
-    console.clear();
 
     if (!login) {
         console.log("\nPlease restart the script to use this feature\n");

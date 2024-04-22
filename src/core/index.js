@@ -16,13 +16,6 @@ terminal.on("key", (name) => {
     }
 });
 
-const elter = () => {
-    return new Promise((re) => {
-        terminal.drawImage("C:\\Users\\nameh\\Desktop\\elter\\elter.jpg");
-        re()
-    });
-}
-
 const menu_options = [
     {
         name: "get missing beatmaps from collections",
@@ -39,10 +32,6 @@ const menu_options = [
     {
         name: "get beatmaps from osu!Collector",
         callback: get_beatmaps_collector
-    },
-    {
-        name: "elter",
-        callback: elter
     }
 ];
 

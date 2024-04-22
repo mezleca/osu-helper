@@ -8,6 +8,8 @@ const base_url = "https://api.nerinyan.moe/d/";
 
 export const download_initialize = async () => {
 
+    console.clear();
+
     console.log("\nWARN: make sure your input file is a json and have this format\n-> ['https://osu.ppy.sh/beatmapsets/id_here', ...]\n");
 
     let file_path = await handle_prompt("enter the file path: ");

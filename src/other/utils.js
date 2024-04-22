@@ -21,15 +21,15 @@ export const show_menu = (list) => new Promise((resolve, reject) => {
         }
 
         if (!item.callback) {
-            console.log("Missing callback");
-            reject();
+            resolve(res.selectedIndex);
+            return;
         }
         
         console.log("\n");
 
         await item.callback();
 
-        resolve();
+        resolve(res.selectedIndex);
     });
 });
 

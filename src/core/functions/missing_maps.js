@@ -168,7 +168,7 @@ const download_maps = async (map, index) => {
 
 const download_things = async () => {
     
-    if (await handle_prompt("download from a specific collection? (y/n): ")) {
+    if (await handle_prompt("download from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
         const obj = [];

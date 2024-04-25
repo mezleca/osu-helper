@@ -1,7 +1,7 @@
 import fs from "fs";
 import Terminal from "terminal-kit";
 
-import { missing_initialize, get_beatmaps_collector } from "./functions/missing_maps.js";
+import { missing_initialize, get_beatmaps_collector, download_all_maps_from_osu } from "./functions/missing_maps.js";
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";
 import { check_login, show_menu } from "../other/utils.js";
@@ -32,7 +32,11 @@ const menu_options = [
     {
         name: "get beatmaps from osu!Collector",
         callback: get_beatmaps_collector
-    }
+    },
+    // {
+    //     name: "fuck",
+    //     callback: download_all_maps_from_osu
+    // }
 ];
 
 const main = async () => {

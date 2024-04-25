@@ -24,16 +24,16 @@ const invalid_maps = [];
 
 const mirrors = [
     {
+        name: "direct",
+        url: "https://api.osu.direct/d/"
+    },
+    {
         name: "chimue",
         url: "https://api.chimu.moe/v1/download/"
     },
     {
         name: "nerinyan",
         url: "https://api.nerinyan.moe/d/"
-    },
-    {
-        name: "direct",
-        url: "https://api.osu.direct/d/"
     }
 ];
 
@@ -66,6 +66,7 @@ const download_map = async (b) => {
 
     const Path = path.resolve(config.get("osu_songs_folder"), `${b}.osz`);
 
+    // look through the beatmaps mirrors
     for (let i = 0; i < mirrors.length; i++) {
 
         const api = mirrors[i];
@@ -76,29 +77,38 @@ const download_map = async (b) => {
             params.NoStoryBoard = true;
         }
 
+        // if the map file already exist's, then break;
+        if (fs.existsSync(Path)) {
+            //console.log("File already Exists");
+            break;
+        }
+
         try {
 
             const response = await axios.get(`${api.url}${b}`, { method: "GET", params, responseType: "arraybuffer" });
-            const buffer = response.data;
+            const data = response.data;
 
             if (response.status != 200) {
+                if (i == mirrors.length - 1) {
+                    console.log("Failed to get beatmap", b);
+                }
                 continue;
             }
 
-            fs.writeFileSync(Path, Buffer.from(buffer));
-        } catch(err) {
+            const buffer = Buffer.from(data);
 
-            //console.log(err)
-
-            if (i == mirrors.length - 1) {
-                last_log = "Failed to find beatmap id: " + b;
+            if (buffer.length <= 1) {
+                continue;
             }
 
-            continue;
+            //console.log("Downloaded", b);
+
+            fs.writeFileSync(Path, Buffer.from(buffer));
+            break;
+        } catch(err) {
+            //
         }
-        break;
-    }
-    
+    }  
 };
 
 Number.prototype.clamp = function(min, max) {
@@ -132,7 +142,7 @@ const progress_bar = (start, end) => {
         process.stdout.cursorTo(0);
         process.stdout.write(`\nLOG -> ${last_log}\n`);
     }
-
+ 
     process.stdout.cursorTo(0);
     process.stdout.write(`downloading: [${bar.repeat(bars)}${sp.repeat((10 - bars).clamp(0, 10))}] ${perc}% ${pirocas[current_piroca]}`);
 }
@@ -162,7 +172,7 @@ const download_maps = async (map, index) => {
     } catch(error) {
         invalid_maps.push({ hash: map.id });
         last_log = "Failed to find beatmap hash: " + map.hash;
-        //console.log(error)
+        //console.log(error.status);
     }
 };
 
@@ -294,6 +304,53 @@ const options = [
     }
 ];
 
+
+export const download_all_maps_from_osu = async () => {
+
+    /* 
+        Use this if for some unknown reason you lost you osu Songs folder but you still have the osu.db file.
+        To enable this option just uncomment the object named: "FUCK" from the index.js file.
+        I recommend to use this 2/3 times, sometimes the api just goes crazy or you just reached the limit so after you downloaded the first time wait some minutes and do it again before opening osu!.
+    */
+
+    const ids = [];
+
+    reader.set_type("osu");
+    reader.set_buffer(osu_file, true);
+
+    if (!reader.osu.beatmaps) {
+
+        console.log("reading osu.db file...\n");
+
+        await reader.get_osu_data();
+        
+        for (let i = 0; i < reader.osu.beatmaps.length; i++) {
+
+            if (reader.osu.beatmaps[i].beatmap_id) {
+                ids.push({id: reader.osu.beatmaps[i].beatmap_id});
+            }
+        }
+    }
+
+    console.log("Diffs length:", ids.length);
+
+    const hp = [];
+    missing_maps = ids.filter((e,i) => {
+        if (hp.includes(e.id)) {
+            return false;
+        } else {
+            hp.push(e.id)
+            return true;
+        }
+    });
+
+    console.log("Maps length:", missing_maps.length);
+
+    await handle_prompt("PRESS ENTER");
+
+    await pMap(missing_maps, download_maps, { concurrency: 5 }); 
+};
+
 export const get_beatmaps_collector = async () => {
 
     if (!login) {
@@ -334,15 +391,8 @@ export const get_beatmaps_collector = async () => {
     reader.set_buffer(osu_file, true);
 
     if (!reader.osu.beatmaps) {
-
         console.log("reading osu.db file...\n");
-
         await reader.get_osu_data();
-        
-        for (let i = 0; i < reader.osu.beatmaps; i++) {
-            reader.osu.beatmaps[i].sr = [];
-            reader.osu.beatmaps[i].timing_points = [];
-        }
     }
 
     // TODO: make this more readable and less stupid.

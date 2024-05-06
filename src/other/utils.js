@@ -1,9 +1,11 @@
 import fs from "fs";
+import os from "os";
+
 import path from "path";
 import readline from "readline-sync";
 import Terminal from "terminal-kit";
 
-import { config } from "./config.js";
+import { config } from "../core/config.js";
 import { auth } from "osu-api-extended";
 
 const missing_config = [];
@@ -49,40 +51,6 @@ export const check_login = async () => {
     } catch (err) {
         console.log("Failed to connect to osu api\nTo use all features restart the script\n");
     }
-};
-
-export const check_config = async () => {
-
-    console.clear();
-    
-    for (const [key, value] of config.entries()) {
-        if (value === '') {
-            console.log(`config for ${key} not found!`);
-            missing_config.push(key);
-        }
-    }
-    
-    if (missing_config.length > 0) {
-
-        console.log("\nenter the following values\n");
-    
-        for (const key of missing_config) {
-            let value = await handle_prompt(`${key}: `);
-            value = value.replace(/\\/g, '\\\\');
-            config.set(key, value);
-        }
-    
-        // yep this is still pretty bad
-        const text = `import { check_config } from "./utils.js";\nexport const config = new Map();\n\n// Update the config files HEREE!!!!!!!!!!!!!!!:\n${Array.from(config).map(([k, v]) => `config.set("${k}", "${v}");`).join('\n')}\n\nawait check_config();`
-    
-        // update the config.js file
-        fs.writeFileSync(path.resolve("./src/other/config.js"), text);
-
-        // :3
-        console.log("\n");
-    }
-
-    console.clear();
 };
 
 export const check_path = () => {

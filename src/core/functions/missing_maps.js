@@ -5,7 +5,7 @@ import pMap from 'p-map';
 import Terminal from "terminal-kit";
 
 import { OsuReader } from "../reader/reader.js";
-import { config } from "../../other/config.js";
+import { config } from "../config.js";
 import { login } from "../index.js";
 import { check_path, handle_prompt, show_menu } from "../../other/utils.js";
 

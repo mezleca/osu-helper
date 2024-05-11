@@ -1,10 +1,9 @@
 import fs from "fs";
 import path from "path";
-import axios from "axios";
 
-import { handle_prompt } from "../../other/utils.js";
-
-const base_url = "https://api.nerinyan.moe/d/";
+import { handle_prompt, mirrors } from "../../other/utils.js";
+import { find_map, progress_bar } from "./missing_maps.js";
+import { config } from "../config.js";
 
 export const download_initialize = async () => {
 
@@ -36,39 +35,24 @@ export const download_initialize = async () => {
     const file = fs.readFileSync(path.resolve(file_path), "utf-8");
     const json = JSON.parse(file);
 
-    console.log("downloading", json.length, "maps...");
+    console.log("downloading", json.length, "maps...\n");
 
     for (let i = 0; i < json.length; i++) {
 
+        progress_bar(i, json.length);
+
         const a = json[i].split("/");
-        const b = a[a.length - 1];
+        const id = a[a.length - 1];
 
-        const response = await axios.get(`${base_url}${b}`, {
-            method: "GET",
-            responseType: "stream",
-            headers: {
-                "Content-Type": "application/x-osu-beatmap-archive"
-            }
-        });
+        const osz_buffer = await find_map(mirrors, id);
 
-        if (response.statusText != "OK") {
-            console.log("\ncannot find " + b + "\n");
-            return;
-        }
+        if (osz_buffer == null) {
+            continue;
+        } 
 
-        const stream = fs.createWriteStream(path.resolve("./data/", `${b}.osz`));
-        response.data.pipe(stream);
-
-        await new Promise((resolve, reject) => {
-            stream.on("finish", resolve);
-            stream.on("error", (err) => {
-                console.error("error:", b, err);
-                reject(err);
-            });
-        });
+        fs.writeFileSync(path.resolve(config.get("osu_songs_folder"), `${id}.osz`), Buffer.from(osz_buffer));
     }
 
     console.clear();
-
     console.log("\ndone!\n");
 };

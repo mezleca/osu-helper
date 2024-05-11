@@ -2,15 +2,15 @@ import fs from "fs";
 import path from "path";
 import axios from "axios";
 import pMap from 'p-map';
-import Terminal from "terminal-kit";
 
 import { OsuReader } from "../reader/reader.js";
 import { config } from "../config.js";
 import { login } from "../index.js";
-import { check_path, handle_prompt, show_menu } from "../../other/utils.js";
+import { check_path, handle_prompt, show_menu, mirrors } from "../../other/utils.js";
 
 check_path();
 
+const invalid_maps = [];
 const reader = new OsuReader();
 const osu_path = config.get("osu_path");
 const osu_file = fs.readFileSync(path.resolve(osu_path, "osu!.db"));
@@ -19,30 +19,14 @@ const collection_file = fs.readFileSync(path.resolve(osu_path, "collection.db"))
 let missing_maps = [];
 let invalid = [];
 let last_log = "";
-
-const invalid_maps = [];
-
-const mirrors = [
-    {
-        name: "direct",
-        url: "https://api.osu.direct/d/"
-    },
-    {
-        name: "chimue",
-        url: "https://api.chimu.moe/v1/download/"
-    },
-    {
-        name: "nerinyan",
-        url: "https://api.nerinyan.moe/d/"
-    }
-];
+let pirocas = ["|", "/", "-", "\\"];
+let current_piroca = 0;
 
 export const search_map_id = async (hash) => {
 
     try {
 
-        const base = "https://osu.ppy.sh/api/v2/beatmaps/lookup?"
-        const response = await axios.get(`${base}checksum=${hash}`, {
+        const response = await fetch(`https://osu.ppy.sh/api/v2/beatmaps/lookup?checksum=${hash}`, {
             headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json",
@@ -50,75 +34,89 @@ export const search_map_id = async (hash) => {
             }
         });
 
-        const data = await response.data;
+        const data = await response.json();
+
+        if (!data) {
+            return null;
+        }
 
         return data;
+
     } catch(err) {
-        //console.log(err)
-        if (err.response) {
-            return false; 
-        }
-        return false;
+        return null;
     }
 };
 
-const download_map = async (b) => {
+export const get_beatmap = async (url, id) => {
 
-    const Path = path.resolve(config.get("osu_songs_folder"), `${b}.osz`);
+    try {
 
+        const response = await fetch(`${url}${id}`, { method: "GET", headers: { responseType: "arraybuffer" } });
+
+        if (response.status != 200) {
+            last_log = `failed to download: ${id}`;
+            return null;
+        }
+
+        const data = await response.arrayBuffer();
+        const buffer = Buffer.from(data);
+        
+        if (!buffer) {
+            return null;
+        }
+
+        return buffer;
+
+    } catch(err) {
+        last_log = `failed to download: ${id} | status: ${err.statusText || ""}`;
+        return null;
+    }
+};
+
+export const find_map = async (mirror, id) => {
+    
+    const is_list = mirror.length ? true : false;
+    const buffer = [];
+
+    // search using the mirror url
+    if (!is_list) {
+        
+        const buffer = await get_beatmap(mirror, id);
+        
+        if (buffer == null) {
+            return null;
+        }
+
+        return buffer;
+    }
+    
     // look through the beatmaps mirrors
     for (let i = 0; i < mirrors.length; i++) {
 
-        const api = mirrors[i];
-        const params = {};
+        const mirror = mirrors[i];
 
-        if (api.name == "nerinyan") {
-            params.NoHitsound = "true";
-            params.NoStoryBoard = true;
+        if (!mirror.url || !id) {
+            return null;
         }
 
-        // if the map file already exist's, then break;
-        if (fs.existsSync(Path)) {
-            //console.log("File already Exists");
-            break;
+        const map_buffer = await get_beatmap(mirror.url, id);
+
+        if (map_buffer == null) {
+            continue;
         }
 
-        try {
+        buffer.push(map_buffer);
+        break;
+    }
 
-            const response = await axios.get(`${api.url}${b}`, { method: "GET", params, responseType: "arraybuffer" });
-            const data = response.data;
-
-            if (response.status != 200) {
-                if (i == mirrors.length - 1) {
-                    console.log("Failed to get beatmap", b);
-                }
-                continue;
-            }
-
-            const buffer = Buffer.from(data);
-
-            if (buffer.length <= 1) {
-                continue;
-            }
-
-            //console.log("Downloaded", b);
-
-            fs.writeFileSync(Path, Buffer.from(buffer));
-            break;
-        } catch(err) {
-            //
-        }
-    }  
+    return buffer.length == 0 ? null : buffer[0];
 };
 
 Number.prototype.clamp = function(min, max) {
     return Math.min(Math.max(this, min), max);
 };
 
-let pirocas = ["|", "/", "-", "\\"];
-let current_piroca = 0;
-
-const progress_bar = (start, end) => {
+export const progress_bar = (start, end) => {
 
     let sp = " "; 
     let bar = "█"; 
@@ -149,31 +147,42 @@ const progress_bar = (start, end) => {
 
 const download_maps = async (map, index) => {
 
-    const hash = map.hash;
-    
-    try {
+    progress_bar(index, missing_maps.length);
 
-        progress_bar(index, missing_maps.length);
-
-        if (!map.id) {
-            
-            const id = (await search_map_id(hash)).beatmapset_id;
-            if (!id) {
-                last_log = "Failed to find beatmap id: " + map.hash;
-                invalid_maps.push({ hash: map.hash });
-                return;
-            }
-
-            map.id = id;
+    if (!map.id) {
+        
+        if (!map.hash) {
+            last_log = "invalid map " + map.hash;
+            return;
         }
 
-        await download_map(map.id);
-           
-    } catch(error) {
-        invalid_maps.push({ hash: map.id });
-        last_log = "Failed to find beatmap hash: " + map.hash;
-        //console.log(error.status);
+        const beatmap = await search_map_id(map.hash);
+
+        if (beatmap == null) {
+            invalid_maps.push({ hash: map.hash });
+            last_log = "Failed to find beatmap hash: " + (map.hash || "") + " " + map;
+            return;
+        }
+
+        map.id = beatmap.beatmapset_id;
     }
+
+    const Path = path.resolve(config.get("osu_songs_folder"), `${map.id}.osz`);
+
+    if (fs.existsSync(Path)) {
+        last_log = `beatmap: ${map.id} already exists in your songs folder`;
+        return;
+    }
+
+    const osz_buffer = await find_map(mirrors, map.id);
+
+    if (osz_buffer == null) {
+        return;
+    }
+
+    fs.writeFileSync(Path, Buffer.from(osz_buffer));
+
+    last_log = `saved beatmap ${map.id}`;
 };
 
 const download_things = async () => {
@@ -190,9 +199,19 @@ const download_things = async () => {
         }
 
         const selected_index = await show_menu(obj);
+        const abc = missing_maps;
         const name = obj[selected_index].name;
 
-        missing_maps = missing_maps.filter((a) => { return a.collection_name == name });
+        missing_maps = [];
+
+        for (let i = 0; i < abc.length; i++) {
+            
+            if (abc[i].collection_name != name || !abc[i].hash) {
+                continue;
+            }
+
+            missing_maps.push(abc[i]);
+        }
 
         if (!missing_maps) {
             console.log("collection not found.");
@@ -201,6 +220,8 @@ const download_things = async () => {
         
         console.log("Found:", missing_maps.length, "maps");
     }
+
+    console.clear();
 
     await pMap(missing_maps, download_maps, { concurrency: 5 });
     
@@ -220,11 +241,17 @@ const export_shit = async () => {
     if (await handle_prompt("export from a specific collection? (y/n): ") == "y") {
 
         const collections = [...new Set(missing_maps.map(a => a.collection_name))];
+        const obj = [];
 
-        // print all collections name
-        console.log("collections:", collections.join("\n"));
+        for (let i = 0; i < collections.length; i++) {
+            if (collections[i]) {
+                obj.push({ name: collections[i] });
+            }
+        }
 
-        const name = await handle_prompt("collection name: ");
+        const selected_index = await show_menu(obj);
+        const name = obj[selected_index].name;
+
         missing_maps = missing_maps.filter((a) => { return a.collection_name == name })
 
         if (!missing_maps) {
@@ -241,22 +268,18 @@ const export_shit = async () => {
 
         for (let i = 0; i < missing_maps.length; i++) {
 
-            const map = missing_maps[i];
+            const map = missing_maps[i];     
+            const hash = map.hash;
+            const info = await search_map_id(hash);   
 
-            try {
-            
-                const hash = map.hash;
-                const info = await search_map_id(hash);   
-                
-                if (info.beatmapset_id) {
-                    ids.push(`https://osu.ppy.sh/beatmapsets/${info.beatmapset_id}`);
-                }
-    
-            } catch(err) {
-                //console.log(err);
+            if (info == null) {
                 invalid.push({ hash: map.hash });
-                throw err;
-            }    
+                continue;
+            }
+            
+            if (info.beatmapset_id) {
+                ids.push(`https://osu.ppy.sh/beatmapsets/${info.beatmapset_id}`);
+            }
         }
 
         re();
@@ -267,12 +290,13 @@ const export_shit = async () => {
 
     fs.writeFileSync(path.resolve("./data/beatmaps.json"), JSON.stringify(o, null , 4));
 
-    console.log("\nbeatmaps.json has been saved in the data folder\n");
+    console.log("\na file named beatmaps.json has been created in the data folder!\n");
 };
 
 const get_tournament_maps = async(id) => {
-    const response = await axios.get(`https://osucollector.com/api/tournaments/${id}`);
-    const data = response.data;
+    const response = await fetch(`https://osucollector.com/api/tournaments/${id}`);
+
+    const data = await response.json();
 
     const maps = [];
     const collection = {};
@@ -361,7 +385,7 @@ export const get_beatmaps_collector = async () => {
     console.clear();
 
     // get collection maps
-    const url = await handle_prompt("url: ");
+    const url = await handle_prompt("url: ", true);
 
     // get collection id
     const url_array = url.split("/");
@@ -377,7 +401,7 @@ export const get_beatmaps_collector = async () => {
     const collection_url = `https://osucollector.com/api/collections/${collection_id}`;
     const Rcollection = is_tournament ? await get_tournament_maps(collection_id) : await axios.get(collection_url);
     const collection = is_tournament ? Rcollection : Rcollection.data;
-
+    
     if (Rcollection.status != 200) {
         return console.log("\ncollection not found");
     }
@@ -438,7 +462,7 @@ export const get_beatmaps_collector = async () => {
         }
     }
 
-    const create_new_collection = await handle_prompt("add the collection to osu? (y or n): ");
+    const create_new_collection = await handle_prompt("add collection to osu? (y or n): ");
     if (create_new_collection != "y") {
         return;
     }
@@ -505,17 +529,16 @@ export const missing_initialize = async () => {
     // verify things
     for (const map of Maps) {
 
-        missing_maps.push({ name: map.name });
-
         for (const m of map.maps) {
-            if (!hashes.has(m)) {
-                if (m != "4294967295") {
-                    missing_maps.push({ collection_name: map.name, hash: m });
-                }
-                else {
-                    invalid.push({ hash: m });
-                }
+
+            if (hashes.has(m)) {
+                continue;
             }
+
+            if (m != "4294967295") {
+                missing_maps.push({ collection_name: map.name, hash: m });
+            }
+
         }
     }
 

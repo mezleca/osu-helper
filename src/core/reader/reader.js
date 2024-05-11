@@ -224,8 +224,6 @@ export class OsuReader {
                 return newBuffer.buffer;
             }, new ArrayBuffer(0));
 
-            console.log(buffer_array);
-
             this.buffer = concate;
 
             r(this.buffer);

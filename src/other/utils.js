@@ -1,14 +1,9 @@
 import fs from "fs";
-import os from "os";
-
-import path from "path";
-import readline from "readline-sync";
 import Terminal from "terminal-kit";
 
 import { config } from "../core/config.js";
 import { auth } from "osu-api-extended";
 
-const missing_config = [];
 const terminal = Terminal.terminal;
 
 export const show_menu = (list) => new Promise((resolve, reject) => {
@@ -34,10 +29,6 @@ export const show_menu = (list) => new Promise((resolve, reject) => {
         resolve(res.selectedIndex);
     });
 });
-
-const prompt = (question) => {
-    return readline.question(question);
-};
 
 export const check_login = async () => {
     try {  
@@ -66,13 +57,36 @@ export const check_path = () => {
     process.exit(1);
 };
 
-export const handle_prompt = async (question) => {
+export const handle_prompt = async (question, tip) => {
+    
+    if (tip) {
+        console.log("if your paste key dont work try using: ctrl + shift + v or mouse2\n");
+    }
+
     process.stdout.write(question);
     const answer = await terminal.inputField().promise;
+
     console.log("\n");
+
     if (answer == "exit") {
         console.log("ok");
         process.exit(0);
     }
+    
     return answer;
 };
+
+export const mirrors = [
+    {
+        name: "direct",
+        url: "https://api.osu.direct/d/"
+    },
+    {
+        name: "nerinyan",
+        url: "https://api.nerinyan.moe/d/"
+    },
+    { // not sure if this will be online again
+        name: "chimue",
+        url: "https://api.chimu.moe/v1/download/"
+    }
+];

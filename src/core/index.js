@@ -5,7 +5,6 @@ import { missing_initialize, get_beatmaps_collector, download_all_maps_from_osu 
 import { download_initialize } from "./functions/download_maps.js";
 import { get_invalid_maps } from "./functions/collections.js";
 import { check_login, show_menu } from "../other/utils.js";
-import { update_filter } from "./functions/filter.js";
 
 export const login = await check_login();
 export const terminal = Terminal.terminal;
@@ -34,10 +33,6 @@ const menu_options = [
         name: "get beatmaps from osu!Collector",
         callback: get_beatmaps_collector
     },
-    {
-        name: "update filter",
-        callback: update_filter
-    }
     // {
     //     name: "fuck",
     //     callback: download_all_maps_from_osu
@@ -54,7 +49,7 @@ const main = async () => {
     }
 
     while (true) {
-        console.log("osu-helper 0.8.0 | type exit to... exit?\n");
+        console.log("osu-stuff 0.7.0 | type exit to... exit?\n");
         await show_menu(menu_options);
     }
 };

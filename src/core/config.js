@@ -9,7 +9,7 @@ import { handle_prompt } from "../other/utils.js";
 
 let file_is_invalid = false;
 
-const linux_path = os.homedir() + "/.config/osu_helper";
+const linux_path = os.homedir() + "/.config/osu_stuff";
 const windows_path = os.homedir() + "/Documents";
 const config_path = path.resolve(os.type() == "Windows_NT" ? windows_path : linux_path);
 const file_path = path.resolve(config_path, "config.json");

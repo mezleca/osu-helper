@@ -6,8 +6,7 @@ import pMap from 'p-map';
 import { OsuReader } from "../reader/reader.js";
 import { config } from "../config.js";
 import { login } from "../index.js";
-import { check_path, handle_prompt, show_menu, mirrors, search_mirrors } from "../../other/utils.js";
-import { filter } from "./filter.js";
+import { check_path, handle_prompt, show_menu, mirrors } from "../../other/utils.js";
 
 check_path();
 
@@ -22,7 +21,6 @@ let invalid = [];
 let last_log = "";
 let pirocas = ["|", "/", "-", "\\"];
 let current_piroca = 0;
-let is_collection = false;
 
 export const search_map_id = async (hash) => {
 
@@ -41,8 +39,6 @@ export const search_map_id = async (hash) => {
         if (!data) {
             return null;
         }
-        
-        data.id = data.beatmapset_id;
 
         return data;
 
@@ -51,100 +47,19 @@ export const search_map_id = async (hash) => {
     }
 };
 
-export const get_beatmap = async (url, data) => {
+export const get_beatmap = async (url, id) => {
 
     try {
 
-        const cu = Object.keys(filter);
-
-        for (let i = 0; i < cu.length; i++) {
-
-            const name = cu.at(i);
-            const f = filter[name];
-                
-            if (name == "star" && f.enabled) {
-
-                // for some reason sometimes the osu api return some random ass beatmap that have like 8 start but if you try to download this shit it will appear as a 2 star.. so idk fuck peppy
-
-                if (!data.difficulty_rating) {
-
-                    if (!data.checksum) {
-                        last_log = "checksum not found";
-                        return null;
-                    }
-
-                    const response = await search_map_id(data.checksum);
-
-                    if (response == null) {
-                        last_log = "failed to search beatmap info " + data.id || data.checksum;
-                        return null;
-                    }
-
-                    data.difficulty_rating = response.difficulty_rating;
-                }
-
-                if (f.min && data.difficulty_rating < f.min) {
-                    last_log = `failed to download beatmap ${data.id} (SR Filter) ${data.difficulty_rating}`;
-                    return;
-                }
-
-                if (f.max && data.difficulty_rating > f.max) {
-                    last_log = `failed to download beatmap ${data.id} (SR Filter) ${data.difficulty_rating}`;
-                    return;
-                }
-            }
-
-            if (name == "status" && f.enabled) {
-
-                if (!data.status) {
-
-                    if (!data.checksum) {
-                        last_log = "checksum not found";
-                        return null;
-                    }
-
-                    const response = await search_map_id(data.checksum);
-
-                    if (response == null) {
-                        last_log = "failed to search beatmap info " + data.id || data.checksum;
-                        return null;
-                    }
-
-                    data.status = response.status;
-                }
-
-                if (f.mode == 0) {
-
-                    if (data.status != f.value) {
-                        last_log = `failed to download beatmap ${data.id} (STATUS Filter)`;
-                        return;
-                    }
-
-                } else {
-
-                    if (data.status == f.value) {
-                        last_log = `failed to download beatmap ${data.id} (STATUS Filter)`;
-                        return;
-                    }
-
-                }  
-            }
-        }
-
-        if (data.id == "2026708") {
-            console.log(data);
-            process.exit(1);
-        }
-
-        const response = await fetch(`${url}${data.id}`, { method: "GET", headers: { responseType: "arraybuffer" } });
+        const response = await fetch(`${url}${id}`, { method: "GET", headers: { responseType: "arraybuffer" } });
 
         if (response.status != 200) {
-            last_log = `failed to download: ${data.id}`;
+            last_log = `failed to download: ${id}`;
             return null;
         }
 
-        const bmdata = await response.arrayBuffer();
-        const buffer = Buffer.from(bmdata);
+        const data = await response.arrayBuffer();
+        const buffer = Buffer.from(data);
         
         if (!buffer) {
             return null;
@@ -153,7 +68,7 @@ export const get_beatmap = async (url, data) => {
         return buffer;
 
     } catch(err) {
-        last_log = `failed to download: ${id}`;
+        last_log = `failed to download: ${id} | status: ${err.statusText || ""}`;
         return null;
     }
 };
@@ -237,7 +152,7 @@ const download_maps = async (map, index) => {
     if (!map.id) {
         
         if (!map.hash) {
-            last_log = "invalid map " + map.id;
+            last_log = "invalid map " + map.hash;
             return;
         }
 
@@ -249,13 +164,7 @@ const download_maps = async (map, index) => {
             return;
         }
 
-        if (!beatmap.beatmapset_id) {
-            return;
-        }
-
-        const c_checksum = map.hash;
-
-        map = { checksum: c_checksum, id: beatmap.beatmapset_id, ...beatmap };
+        map.id = beatmap.beatmapset_id;
     }
 
     const Path = path.resolve(config.get("osu_songs_folder"), `${map.id}.osz`);
@@ -265,20 +174,15 @@ const download_maps = async (map, index) => {
         return;
     }
 
-    const osz_buffer = Object.keys(map).length > 1 ? await find_map(mirrors, map) : await find_map(mirrors, map.id);
+    const osz_buffer = await find_map(mirrors, map.id);
 
     if (osz_buffer == null) {
         return;
     }
 
-    // TO FIX: Error: EBUSY: resource busy or locked
-    try {
-        fs.writeFileSync(Path, Buffer.from(osz_buffer));
-        last_log = `saved beatmap ${map.id}`;
-    }
-    catch(err) {
-        //
-    }
+    fs.writeFileSync(Path, Buffer.from(osz_buffer));
+
+    last_log = `saved beatmap ${map.id}`;
 };
 
 const download_things = async () => {
@@ -532,31 +436,20 @@ export const get_beatmaps_collector = async () => {
     const filtered_maps = is_tournament ?
     collection.beatmapsets.filter((beatmap) => {
         return !maps_hashes.has(beatmap.checksum) && beatmap.checksum && beatmap.beatmapset;
-    }).map((b) => b.beatmapset)
+    }).map((b) => b.beatmapset )
     : // else
     collection.beatmapsets.filter((beatmapset) => {
         return !beatmapset.beatmaps.some((beatmap) => maps_hashes.has(beatmap.checksum));
-    }).flatMap((beatmapset) => { // this might cause issues but btw. maybe i will change this later
-        return beatmapset.beatmaps.map(() => ({
-          id: beatmapset.id,
-          checksum: beatmapset.beatmaps[0].checksum,
-        }));
     });
 
     console.log(`Found ${filtered_maps.length} missing maps`);
-
-    // fs.writeFileSync("data.json", JSON.stringify(filtered_maps, null, 4));
-    // process.exit(1);
 
     const confirmation = await handle_prompt("download? (y or n): ");
     if (confirmation == "y") {
 
         missing_maps = filtered_maps;
-        is_collection = true;
 
         await pMap(missing_maps, download_maps, { concurrency: 5 }); 
-
-        is_collection = false;
     
         // clean progress bar line
         process.stdout.clearLine(); 
@@ -582,7 +475,7 @@ export const get_beatmaps_collector = async () => {
     }
 
     reader.collections.beatmaps.push({
-        name: "!helper - " + collection.name,
+        name: "!stuff - " + collection.name,
         maps: collection_hashes
     });
 
@@ -637,10 +530,6 @@ export const missing_initialize = async () => {
     for (const map of Maps) {
 
         for (const m of map.maps) {
-            
-            if (!m) {
-                continue;
-            }
 
             if (hashes.has(m)) {
                 continue;

@@ -84,9 +84,9 @@ export const mirrors = [
     {
         name: "nerinyan",
         url: "https://api.nerinyan.moe/d/"
+    },
+    { // not sure if this will be online again
+        name: "chimue",
+        url: "https://api.chimu.moe/v1/download/"
     }
-];
-
-export const search_mirrors = [
-    "https://api.osu.direct/v2/b/",
 ];

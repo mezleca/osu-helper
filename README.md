@@ -1,4 +1,4 @@
-# osu-helper-node
+# osu-stuff-node
 
 download missing beatmaps, collections, tournament collections, etc...
 

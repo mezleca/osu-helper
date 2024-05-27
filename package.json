@@ -1,7 +1,7 @@
 {
-    "name": "osu-helper",
-    "version": "0.8.0",
-    "description": "osu helper",
+    "name": "osu-stuff",
+    "version": "0.7.0",
+    "description": "osu stuff",
     "scripts": {
         "start": "node src/core/index.js"
     },
